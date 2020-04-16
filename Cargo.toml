@@ -1,0 +1,19 @@
+[package]
+name = "ethnum"
+version = "1.0.2"
+authors = ["Nicholas Rodrigues Lordello <nlordell@gmail.com>"]
+edition = "2018"
+description = "256-bit unsigned integer implementation"
+documentation = "https://docs.rs/ethnum"
+readme = "README.md"
+homepage = "https://github.com/nlordell/ethnum-rs"
+repository = "https://github.com/nlordell/ethnum-rs"
+license = "MIT OR Apache-2.0"
+keywords = ["integer", "u256", "ethereum"]
+categories = ["cryptography::cryptocurrencies", "mathematics", "no-std"]
+
+[features]
+llvm-intrinsics = ["ethnum-intrinsics"]
+
+[dependencies]
+ethnum-intrinsics = { version = "1", path = "intrinsics", optional = true }

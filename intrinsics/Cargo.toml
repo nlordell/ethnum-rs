@@ -1,0 +1,18 @@
+[package]
+name = "ethnum-intrinsics"
+version = "1.0.0"
+authors = ["Nicholas Rodrigues Lordello <nlordell@gmail.com>"]
+edition = "2018"
+description = "LLVM generated 256-bit unsigned integer intrinsics"
+documentation = "https://docs.rs/ethnum-intrinsics"
+readme = "README.md"
+homepage = "https://github.com/nlordell/ethrs"
+repository = "https://github.com/nlordell/ethrs"
+license = "MIT OR Apache-2.0"
+keywords = ["integer", "u256", "ethereum"]
+categories = ["cryptography::cryptocurrencies", "mathematics", "no-std"]
+build = "build/main.rs"
+links = "ethnum"
+
+[build-dependencies]
+cc = "1.0.58"
