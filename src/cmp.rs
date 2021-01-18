@@ -15,10 +15,7 @@ use core::cmp::Ordering;
 impl Ord for U256 {
     #[inline]
     fn cmp(&self, other: &Self) -> Ordering {
-        match self.high().cmp(other.high()) {
-            Ordering::Equal => self.low().cmp(other.low()),
-            ordering => ordering,
-        }
+        self.into_words().cmp(&other.into_words())
     }
 }
 
@@ -60,5 +57,12 @@ mod tests {
         let y = U256::from_words(2938735877, 18960114910927365649471927446130393088);
         assert!(x < y);
         assert_eq!(x.cmp(&y), Ordering::Less);
+        assert!(y > x);
+        assert_eq!(y.cmp(&x), Ordering::Greater);
+
+        let x = U256::new(100);
+        let y = U256::new(100);
+        assert!(x <= y);
+        assert_eq!(x.cmp(&y), Ordering::Equal);
     }
 }

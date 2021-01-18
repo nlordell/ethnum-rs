@@ -1,0 +1,27 @@
+name: Rust
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Lint
+      run: |
+        cargo fmt -- --check
+        cargo clippy --all-targets -- -D warnings
+    - name: Test Native Intrinsics
+      run: |
+        cargo test
+    - name: Test LLVM Intrinsics
+      run: |
+        cargo test --features llvm-intrinsics

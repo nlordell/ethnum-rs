@@ -15,7 +15,7 @@ use core::str::{self, FromStr};
 /// Converts a string slice in a given base to an `U256`.
 pub(crate) fn from_str_radix(src: &str, radix: u32) -> Result<U256, ParseIntError> {
     assert!(
-        radix >= 2 && radix <= 36,
+        (2..=36).contains(&radix),
         "from_str_radix_int: must lie in the range `[2, 36]` - found {}",
         radix
     );
