@@ -13,7 +13,7 @@ Add this to your `Cargo.toml`:
 ethnum = "1"
 ```
 
-The API follows the `uN` primitive types as close as possible.
+The API follows the Rust `uN` primitive types as close as possible.
 
 ## Intrinsics
 
@@ -59,4 +59,14 @@ in order to actually take advantage of the the optimized assembly:
 
 ```sh
 RUSTFLAGS="-Clinker-plugin-lto -Clinker=clang -Clink-arg=-fuse-ld=lld" cargo build
+```
+
+## Benchmarking
+
+The `ethnum-bench` crate implements `criterion` benchmarks for performance of
+unsigned integer intrinsics:
+
+```sh
+cargo bench -p ethnum-bench
+RUSTFLAGS="-Clinker-plugin-lto -Clinker=clang -Clink-arg=-fuse-ld=lld" cargo bench -p ethnum-bench --features llvm-intrinsics
 ```

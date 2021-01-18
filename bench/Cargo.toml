@@ -1,0 +1,17 @@
+[package]
+name = "ethnum-bench"
+version = "0.0.0"
+publish = false
+edition = "2018"
+
+[[bench]]
+name = "num"
+harness = false
+
+[features]
+llvm-intrinsics = ["ethnum/llvm-intrinsics"]
+
+[dependencies]
+ethnum = { path = ".." }
+criterion = "0.3.3"
+primitive-types = "0.7.2"
