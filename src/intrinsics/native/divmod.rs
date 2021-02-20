@@ -154,7 +154,7 @@ pub fn udivmod4(
         // const ti_int s =
         //     (ti_int)(divisor.all - dividend.all - 1) >> (n_utword_bits - 1);
         let mut s = divisor.wrapping_sub(dividend).wrapping_sub(U256::ONE);
-        s = U256::from_words((*s.high() as i128 >> 127) as u128, s.high() >> 127);
+        s = U256::from_words((*s.high() as i128 >> 127) as u128, (*s.high() as i128 >> 127) as u128);
 
         *quotient.low_mut() = *quotient.low() | (s & 1).as_u128();
         dividend -= divisor & s;
