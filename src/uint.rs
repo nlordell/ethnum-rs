@@ -34,6 +34,16 @@ impl U256 {
     /// ```
     pub const MAX: Self = U256([!0; 2]);
 
+    /// The size of this integer type in bits.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use ethnum::U256;
+    /// assert_eq!(U256::BITS, 256);
+    /// ```
+    pub const BITS: u32 = 256;
+
     /// Converts a string slice in a given base to an integer.
     ///
     /// The string is expected to be an optional `+` sign followed by digits.
