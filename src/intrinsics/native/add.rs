@@ -21,7 +21,7 @@ pub fn add3(r: &mut MaybeUninit<U256>, a: &U256, b: &U256) {
 }
 
 #[inline]
-pub fn addc(r: &mut MaybeUninit<U256>, a: &U256, b: &U256) -> bool {
+pub fn uaddc(r: &mut MaybeUninit<U256>, a: &U256, b: &U256) -> bool {
     let (lo, carry_lo) = a.low().overflowing_add(*b.low());
     let (hi, carry_c) = a.high().overflowing_add(carry_lo as _);
     let (hi, carry_hi) = hi.overflowing_add(*b.high());

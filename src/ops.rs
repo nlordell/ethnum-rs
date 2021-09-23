@@ -90,9 +90,9 @@ macro_rules! impl_ref_binop {
 }
 
 impl_binops! {
-    Add { add => add3, addc; "add with overflow" }
-    Mul { mul => mul3, mulc; "multiply with overflow" }
-    Sub { sub => sub3, subc; "subtract with overflow" }
+    Add { add => add3, uaddc; "add with overflow" }
+    Mul { mul => umul3, umulc; "multiply with overflow" }
+    Sub { sub => sub3, usubc; "subtract with overflow" }
 }
 
 impl ops::Div for &'_ U256 {
@@ -105,7 +105,7 @@ impl ops::Div for &'_ U256 {
         }
 
         let mut result = MaybeUninit::uninit();
-        div3(&mut result, self, rhs);
+        udiv3(&mut result, self, rhs);
         unsafe { result.assume_init() }
     }
 }
@@ -122,7 +122,7 @@ impl ops::Rem for &'_ U256 {
         }
 
         let mut result = MaybeUninit::uninit();
-        rem3(&mut result, self, rhs);
+        urem3(&mut result, self, rhs);
         unsafe { result.assume_init() }
     }
 }
@@ -181,8 +181,8 @@ macro_rules! shift {
 }
 
 impl_shifts! {
-    Shl { shl => shl3; "shift left with overflow" }
-    Shr { shr => shr3; "shift right with overflow" }
+    Shl { shl => ashl3; "shift left with overflow" }
+    Shr { shr => lshr3; "shift right with overflow" }
 }
 
 impl ops::Not for U256 {
@@ -305,9 +305,9 @@ macro_rules! impl_ref_binop_assign {
 
 impl_binops_assign! {
     AddAssign { add_assign => add2, + }
-    DivAssign { div_assign => div2, / }
-    MulAssign { mul_assign => mul2, * }
-    RemAssign { rem_assign => rem2, % }
+    DivAssign { div_assign => udiv2, / }
+    MulAssign { mul_assign => umul2, * }
+    RemAssign { rem_assign => urem2, % }
     SubAssign { sub_assign => sub2, - }
 }
 
@@ -345,8 +345,8 @@ macro_rules! impl_shifts_assign {
 }
 
 impl_shifts_assign! {
-    ShlAssign { shl_assign => shl2, << }
-    ShrAssign { shr_assign => shr2, >> }
+    ShlAssign { shl_assign => ashl2, << }
+    ShrAssign { shr_assign => lshr2, >> }
 }
 
 macro_rules! impl_bitwiseops_assign {

@@ -191,7 +191,8 @@ pub fn udivmod4(
     set!(res = quotient);
 }
 
-pub fn div2(r: &mut U256, a: &U256) {
+#[inline]
+pub fn udiv2(r: &mut U256, a: &U256) {
     let (a, b) = (*r, a);
     // SAFETY: `udivmod4` does not write `MaybeUninit::uninit()` to `res` and
     // `U256` does not implement `Drop`.
@@ -199,11 +200,13 @@ pub fn div2(r: &mut U256, a: &U256) {
     udivmod4(res, &a, b, None);
 }
 
-pub fn div3(r: &mut MaybeUninit<U256>, a: &U256, b: &U256) {
+#[inline]
+pub fn udiv3(r: &mut MaybeUninit<U256>, a: &U256, b: &U256) {
     udivmod4(r, a, b, None);
 }
 
-pub fn rem2(r: &mut U256, a: &U256) {
+#[inline]
+pub fn urem2(r: &mut U256, a: &U256) {
     let mut res = MaybeUninit::uninit();
     let (a, b) = (*r, a);
     // SAFETY: `udivmod4` does not write `MaybeUninit::uninit()` to `rem` and
@@ -212,7 +215,8 @@ pub fn rem2(r: &mut U256, a: &U256) {
     udivmod4(&mut res, &a, b, Some(r));
 }
 
-pub fn rem3(r: &mut MaybeUninit<U256>, a: &U256, b: &U256) {
+#[inline]
+pub fn urem3(r: &mut MaybeUninit<U256>, a: &U256, b: &U256) {
     let mut res = MaybeUninit::uninit();
     udivmod4(&mut res, a, b, Some(r));
 }
@@ -222,15 +226,15 @@ mod tests {
     use super::*;
     use crate::AsU256;
 
-    fn div(a: impl AsU256, b: impl AsU256) -> U256 {
+    fn udiv(a: impl AsU256, b: impl AsU256) -> U256 {
         let mut r = MaybeUninit::uninit();
-        div3(&mut r, &a.as_u256(), &b.as_u256());
+        udiv3(&mut r, &a.as_u256(), &b.as_u256());
         unsafe { r.assume_init() }
     }
 
-    fn rem(a: impl AsU256, b: impl AsU256) -> U256 {
+    fn urem(a: impl AsU256, b: impl AsU256) -> U256 {
         let mut r = MaybeUninit::uninit();
-        rem3(&mut r, &a.as_u256(), &b.as_u256());
+        urem3(&mut r, &a.as_u256(), &b.as_u256());
         unsafe { r.assume_init() }
     }
 
@@ -239,41 +243,44 @@ mod tests {
         // 0 X
         // ---
         // 0 X
-        assert_eq!(div(100, 9), 11);
+        assert_eq!(udiv(100, 9), 11);
 
         // 0 X
         // ---
         // K X
-        assert_eq!(div(!0u128, U256::ONE << 128u32), 0);
+        assert_eq!(udiv(!0u128, U256::ONE << 128u32), 0);
 
         // K 0
         // ---
         // K 0
-        assert_eq!(div(U256::from_words(100, 0), U256::from_words(10, 0)), 10);
+        assert_eq!(udiv(U256::from_words(100, 0), U256::from_words(10, 0)), 10);
 
         // K K
         // ---
         // K 0
-        assert_eq!(div(U256::from_words(100, 1337), U256::ONE << 130u32), 25);
-        assert_eq!(div(U256::from_words(1337, !0), U256::from_words(63, 0)), 21);
+        assert_eq!(udiv(U256::from_words(100, 1337), U256::ONE << 130u32), 25);
+        assert_eq!(
+            udiv(U256::from_words(1337, !0), U256::from_words(63, 0)),
+            21
+        );
 
         // K X
         // ---
         // 0 K
         assert_eq!(
-            div(U256::from_words(42, 0), U256::ONE),
+            udiv(U256::from_words(42, 0), U256::ONE),
             U256::from_words(42, 0),
         );
         assert_eq!(
-            div(U256::from_words(42, 42), U256::ONE << 42),
+            udiv(U256::from_words(42, 42), U256::ONE << 42),
             42u128 << (128 - 42),
         );
         assert_eq!(
-            div(U256::from_words(1337, !0), 0xc0ffee),
+            udiv(U256::from_words(1337, !0), 0xc0ffee),
             35996389033280467545299711090127855,
         );
         assert_eq!(
-            div(U256::from_words(42, 0), 99),
+            udiv(U256::from_words(42, 0), 99),
             144362216269489045105674075880144089708,
         );
 
@@ -281,11 +288,11 @@ mod tests {
         // ---
         // K K
         assert_eq!(
-            div(U256::from_words(100, 100), U256::from_words(1000, 1000)),
+            udiv(U256::from_words(100, 100), U256::from_words(1000, 1000)),
             0,
         );
         assert_eq!(
-            div(U256::from_words(1337, !0), U256::from_words(43, !0)),
+            udiv(U256::from_words(1337, !0), U256::from_words(43, !0)),
             30,
         );
     }
@@ -293,7 +300,7 @@ mod tests {
     #[test]
     #[should_panic]
     fn division_by_zero() {
-        div(1, 0);
+        udiv(1, 0);
     }
 
     #[test]
@@ -301,44 +308,44 @@ mod tests {
         // 0 X
         // ---
         // 0 X
-        assert_eq!(rem(100, 9), 1);
+        assert_eq!(urem(100, 9), 1);
 
         // 0 X
         // ---
         // K X
-        assert_eq!(rem(!0u128, U256::ONE << 128u32), !0u128);
+        assert_eq!(urem(!0u128, U256::ONE << 128u32), !0u128);
 
         // K 0
         // ---
         // K 0
-        assert_eq!(rem(U256::from_words(100, 0), U256::from_words(10, 0)), 0);
+        assert_eq!(urem(U256::from_words(100, 0), U256::from_words(10, 0)), 0);
 
         // K K
         // ---
         // K 0
-        assert_eq!(rem(U256::from_words(100, 1337), U256::ONE << 130u32), 1337);
+        assert_eq!(urem(U256::from_words(100, 1337), U256::ONE << 130u32), 1337);
         assert_eq!(
-            rem(U256::from_words(1337, !0), U256::from_words(63, 0)),
+            urem(U256::from_words(1337, !0), U256::from_words(63, 0)),
             U256::from_words(14, !0),
         );
 
         // K X
         // ---
         // 0 K
-        assert_eq!(rem(U256::from_words(42, 0), U256::ONE), 0);
-        assert_eq!(rem(U256::from_words(42, 42), U256::ONE << 42), 42);
-        assert_eq!(rem(U256::from_words(1337, !0), 0xc0ffee), 1910477);
-        assert_eq!(rem(U256::from_words(42, 0), 99), 60);
+        assert_eq!(urem(U256::from_words(42, 0), U256::ONE), 0);
+        assert_eq!(urem(U256::from_words(42, 42), U256::ONE << 42), 42);
+        assert_eq!(urem(U256::from_words(1337, !0), 0xc0ffee), 1910477);
+        assert_eq!(urem(U256::from_words(42, 0), 99), 60);
 
         // K X
         // ---
         // K K
         assert_eq!(
-            rem(U256::from_words(100, 100), U256::from_words(1000, 1000)),
+            urem(U256::from_words(100, 100), U256::from_words(1000, 1000)),
             U256::from_words(100, 100),
         );
         assert_eq!(
-            rem(U256::from_words(1337, !0), U256::from_words(43, !0)),
+            urem(U256::from_words(1337, !0), U256::from_words(43, !0)),
             U256::from_words(18, 29),
         );
     }
@@ -346,6 +353,6 @@ mod tests {
     #[test]
     #[should_panic]
     fn remainder_by_zero() {
-        rem(1, 0);
+        urem(1, 0);
     }
 }

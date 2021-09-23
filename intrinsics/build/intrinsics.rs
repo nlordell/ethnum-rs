@@ -39,7 +39,7 @@ def! {
         let res = a.wrapping_add(*b);
         r.as_mut_ptr().write(res);
     }
-    pub unsafe fn addc(r: &mut MaybeUninit<u128>, a: &u128, b: &u128) -> bool {
+    pub unsafe fn uaddc(r: &mut MaybeUninit<u128>, a: &u128, b: &u128) -> bool {
         let (res, carry) = a.overflowing_add(*b);
         r.as_mut_ptr().write(res);
         carry
@@ -52,37 +52,37 @@ def! {
         let res = a.wrapping_sub(*b);
         r.as_mut_ptr().write(res);
     }
-    pub unsafe fn subc(r: &mut MaybeUninit<u128>, a: &u128, b: &u128) -> bool {
+    pub unsafe fn usubc(r: &mut MaybeUninit<u128>, a: &u128, b: &u128) -> bool {
         let (res, carry) = a.overflowing_sub(*b);
         r.as_mut_ptr().write(res);
         carry
     }
 
-    pub unsafe fn mul2(r: &mut u128, a: &u128) {
+    pub unsafe fn umul2(r: &mut u128, a: &u128) {
         *r *= *a;
     }
-    pub unsafe fn mul3(r: &mut MaybeUninit<u128>, a: &u128, b: &u128) {
+    pub unsafe fn umul3(r: &mut MaybeUninit<u128>, a: &u128, b: &u128) {
         let res = a.wrapping_mul(*b);
         r.as_mut_ptr().write(res);
     }
-    pub unsafe fn mulc(r: &mut MaybeUninit<u128>, a: &u128, b: &u128) -> bool {
+    pub unsafe fn umulc(r: &mut MaybeUninit<u128>, a: &u128, b: &u128) -> bool {
         let (res, carry) = a.overflowing_mul(*b);
         r.as_mut_ptr().write(res);
         carry
     }
 
-    pub unsafe fn shl2(r: &mut u128, a: u32) {
+    pub unsafe fn ashl2(r: &mut u128, a: u32) {
         *r <<= a;
     }
-    pub unsafe fn shl3(r: &mut MaybeUninit<u128>, a: &u128, b: u32) {
+    pub unsafe fn ashl3(r: &mut MaybeUninit<u128>, a: &u128, b: u32) {
         let res = a.wrapping_shl(b);
         r.as_mut_ptr().write(res);
     }
 
-    pub unsafe fn shr2(r: &mut u128, a: u32) {
+    pub unsafe fn lshr2(r: &mut u128, a: u32) {
         *r >>= a;
     }
-    pub unsafe fn shr3(r: &mut MaybeUninit<u128>, a: &u128, b: u32) {
+    pub unsafe fn lshr3(r: &mut MaybeUninit<u128>, a: &u128, b: u32) {
         let res = a.wrapping_shr(b);
         r.as_mut_ptr().write(res);
     }

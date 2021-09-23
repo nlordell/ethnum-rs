@@ -4,22 +4,22 @@ use crate::U256;
 use core::mem::MaybeUninit;
 
 #[inline]
-pub fn shr2(r: &mut U256, a: u32) {
+pub fn lshr2(r: &mut U256, a: u32) {
     debug_assert!(a < 256, "shr intrinsic called with overflowing shift");
 
     let (hi, lo) = if a == 0 {
         return;
     } else if a < 128 {
-        ((r.high() >> a) | (r.low() << (128 - a)), r.low() >> a)
+        (r.high() >> a, r.low() >> a | (r.high() << (128 - a)))
     } else {
-        (r.low() >> (a & 0x7f), 0)
+        (0, r.high() >> (a & 0x7f))
     };
 
     *r = U256::from_words(hi, lo);
 }
 
 #[inline]
-pub fn shr3(r: &mut MaybeUninit<U256>, a: &U256, b: u32) {
+pub fn lshr3(r: &mut MaybeUninit<U256>, a: &U256, b: u32) {
     debug_assert!(b < 256, "shr intrinsic called with overflowing shift");
 
     let (hi, lo) = if b == 0 {

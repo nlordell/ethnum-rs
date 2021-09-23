@@ -816,7 +816,7 @@ impl U256 {
     #[inline]
     pub fn wrapping_mul(self, rhs: Self) -> Self {
         let mut result = MaybeUninit::uninit();
-        intrinsics::mul3(&mut result, &self, &rhs);
+        intrinsics::umul3(&mut result, &self, &rhs);
         unsafe { result.assume_init() }
     }
 
@@ -961,7 +961,7 @@ impl U256 {
     #[inline]
     pub fn wrapping_shl(self, rhs: u32) -> Self {
         let mut result = MaybeUninit::uninit();
-        intrinsics::shl3(&mut result, &self, rhs & 0xff);
+        intrinsics::ashl3(&mut result, &self, rhs & 0xff);
         unsafe { result.assume_init() }
     }
 
@@ -990,7 +990,7 @@ impl U256 {
     #[inline]
     pub fn wrapping_shr(self, rhs: u32) -> Self {
         let mut result = MaybeUninit::uninit();
-        intrinsics::shr3(&mut result, &self, rhs & 0xff);
+        intrinsics::lshr3(&mut result, &self, rhs & 0xff);
         unsafe { result.assume_init() }
     }
 
@@ -1057,7 +1057,7 @@ impl U256 {
     #[inline]
     pub fn overflowing_add(self, rhs: Self) -> (Self, bool) {
         let mut result = MaybeUninit::uninit();
-        let overflow = intrinsics::addc(&mut result, &self, &rhs);
+        let overflow = intrinsics::uaddc(&mut result, &self, &rhs);
         (unsafe { result.assume_init() }, overflow)
     }
 
@@ -1081,7 +1081,7 @@ impl U256 {
     #[inline]
     pub fn overflowing_sub(self, rhs: Self) -> (Self, bool) {
         let mut result = MaybeUninit::uninit();
-        let overflow = intrinsics::subc(&mut result, &self, &rhs);
+        let overflow = intrinsics::usubc(&mut result, &self, &rhs);
         (unsafe { result.assume_init() }, overflow)
     }
 
@@ -1111,7 +1111,7 @@ impl U256 {
     #[inline]
     pub fn overflowing_mul(self, rhs: Self) -> (Self, bool) {
         let mut result = MaybeUninit::uninit();
-        let overflow = intrinsics::mulc(&mut result, &self, &rhs);
+        let overflow = intrinsics::umulc(&mut result, &self, &rhs);
         (unsafe { result.assume_init() }, overflow)
     }
 

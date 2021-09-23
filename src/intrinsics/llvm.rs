@@ -34,21 +34,21 @@ macro_rules! def {
 def! {
     pub fn add2(r: &mut U256, a: &U256);
     pub fn add3(r: &mut MaybeUninit<U256>, a: &U256, b: &U256);
-    pub fn addc(r: &mut MaybeUninit<U256>, a: &U256, b: &U256) -> bool;
+    pub fn uaddc(r: &mut MaybeUninit<U256>, a: &U256, b: &U256) -> bool;
 
-    pub fn mul2(r: &mut U256, a: &U256);
-    pub fn mul3(r: &mut MaybeUninit<U256>, a: &U256, b: &U256);
-    pub fn mulc(r: &mut MaybeUninit<U256>, a: &U256, b: &U256) -> bool;
+    pub fn umul2(r: &mut U256, a: &U256);
+    pub fn umul3(r: &mut MaybeUninit<U256>, a: &U256, b: &U256);
+    pub fn umulc(r: &mut MaybeUninit<U256>, a: &U256, b: &U256) -> bool;
 
     pub fn sub2(r: &mut U256, a: &U256);
     pub fn sub3(r: &mut MaybeUninit<U256>, a: &U256, b: &U256);
-    pub fn subc(r: &mut MaybeUninit<U256>, a: &U256, b: &U256) -> bool;
+    pub fn usubc(r: &mut MaybeUninit<U256>, a: &U256, b: &U256) -> bool;
 
-    pub fn shl2(r: &mut U256, a: u32);
-    pub fn shl3(r: &mut MaybeUninit<U256>, a: &U256, b: u32);
+    pub fn ashl2(r: &mut U256, a: u32);
+    pub fn ashl3(r: &mut MaybeUninit<U256>, a: &U256, b: u32);
 
-    pub fn shr2(r: &mut U256, a: u32);
-    pub fn shr3(r: &mut MaybeUninit<U256>, a: &U256, b: u32);
+    pub fn lshr2(r: &mut U256, a: u32);
+    pub fn lshr3(r: &mut MaybeUninit<U256>, a: &U256, b: u32);
 
     pub fn rotate_left(r: &mut MaybeUninit<U256>, a: &U256, b: u32);
     pub fn rotate_right(r: &mut MaybeUninit<U256>, a: &U256, b: u32);

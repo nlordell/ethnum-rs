@@ -22,6 +22,8 @@ jobs:
     - name: Test Native Intrinsics
       run: |
         cargo test
+        cargo test --release
     - name: Test LLVM Intrinsics
       run: |
         cargo test --features llvm-intrinsics
+        cargo test --features llvm-intrinsics --release

@@ -4,7 +4,7 @@ use crate::U256;
 use core::mem::MaybeUninit;
 
 #[inline]
-pub fn shl2(r: &mut U256, a: u32) {
+pub fn ashl2(r: &mut U256, a: u32) {
     debug_assert!(a < 256, "shl intrinsic called with overflowing shift");
 
     let (hi, lo) = if a == 0 {
@@ -19,7 +19,7 @@ pub fn shl2(r: &mut U256, a: u32) {
 }
 
 #[inline]
-pub fn shl3(r: &mut MaybeUninit<U256>, a: &U256, b: u32) {
+pub fn ashl3(r: &mut MaybeUninit<U256>, a: &U256, b: u32) {
     debug_assert!(b < 256, "shl intrinsic called with overflowing shift");
 
     let (hi, lo) = if b == 0 {

@@ -21,7 +21,7 @@ pub fn sub3(r: &mut MaybeUninit<U256>, a: &U256, b: &U256) {
 }
 
 #[inline]
-pub fn subc(r: &mut MaybeUninit<U256>, a: &U256, b: &U256) -> bool {
+pub fn usubc(r: &mut MaybeUninit<U256>, a: &U256, b: &U256) -> bool {
     let (lo, carry_lo) = a.low().overflowing_sub(*b.low());
     let (hi, carry_c) = a.high().overflowing_sub(carry_lo as _);
     let (hi, carry_hi) = hi.overflowing_sub(*b.high());
