@@ -4,12 +4,25 @@ use std::ops::*;
 
 fn arithmetic<U>(c: &mut Criterion)
 where
-    U: Add + Mul + Sub + Shl<Output = U> + Shr + Copy + From<u128>,
+    U: Add + Div + Mul + Sub + Shl<Output = U> + Shr + Copy + From<u128>,
 {
     let value = U::from(u128::MAX) << U::from(11);
+    let lo = U::from(u128::MAX >> 13);
 
     c.bench_function(&format!("{}::add", any::type_name::<U>()), |b| {
         b.iter(|| black_box(value) + black_box(value))
+    });
+
+    c.bench_function(&format!("{}::div (lo/lo)", any::type_name::<U>()), |b| {
+        b.iter(|| black_box(lo) / black_box(lo))
+    });
+
+    c.bench_function(&format!("{}::div (hi/lo)", any::type_name::<U>()), |b| {
+        b.iter(|| black_box(value) / black_box(lo))
+    });
+
+    c.bench_function(&format!("{}::div (hi/hi)", any::type_name::<U>()), |b| {
+        b.iter(|| black_box(value) / black_box(value))
     });
 
     c.bench_function(&format!("{}::mul", any::type_name::<U>()), |b| {
