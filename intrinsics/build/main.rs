@@ -12,11 +12,7 @@
 mod intrinsics;
 
 use cc::Build;
-use std::env;
-use std::error::Error;
-use std::fs;
-use std::path::PathBuf;
-use std::process::Command;
+use std::{env, error::Error, fs, path::PathBuf, process::Command};
 
 fn main() -> Result<(), Box<dyn Error>> {
     let out_dir = PathBuf::from(env::var("OUT_DIR")?);

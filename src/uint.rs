@@ -1,10 +1,10 @@
 //! Module containing integer aritimetic methods.
 
-use crate::fmt;
-use crate::intrinsics;
-use crate::U256;
-use core::mem::{self, MaybeUninit};
-use core::num::ParseIntError;
+use crate::{fmt, intrinsics, U256};
+use core::{
+    mem::{self, MaybeUninit},
+    num::ParseIntError,
+};
 
 impl U256 {
     /// The smallest value that can be represented by this integer type.

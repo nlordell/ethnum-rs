@@ -1,9 +1,7 @@
 //! Module containing macros for implementing `core::ops` traits.
 
-use crate::intrinsics::*;
-use crate::U256;
-use core::mem::MaybeUninit;
-use core::ops;
+use crate::{intrinsics::*, U256};
+use core::{mem::MaybeUninit, ops};
 
 macro_rules! impl_binops {
     ($(

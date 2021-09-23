@@ -1,8 +1,7 @@
 //! Module contains conversions for [`U256`] to and from primimitive types.
 
 use crate::U256;
-use core::convert::{TryFrom, TryInto};
-use core::num::TryFromIntError;
+use core::{convert::TryFrom, mem, num::TryFromIntError};
 
 macro_rules! impl_from {
     ($($t:ty),* $(,)?) => {$(
@@ -63,6 +62,7 @@ pub trait AsU256 {
     /// Perform an `as` conversion to a [`U256`].
     ///
     /// [`U256`]: struct.U256.html
+    #[allow(clippy::wrong_self_convention)]
     fn as_u256(self) -> U256;
 }
 
@@ -140,30 +140,24 @@ impl_as_u256_float! {
     f32[u32], f64[u64],
 }
 
-impl TryInto<u128> for U256 {
-    type Error = TryFromIntError;
-
-    #[inline]
-    fn try_into(self) -> Result<u128, Self::Error> {
-        let (hi, lo) = self.into_words();
-        if hi != 0 {
-            // NOTE: Work around not being able to construct an error.
-            (-1isize).try_into()
-        } else {
-            Ok(lo)
-        }
-    }
+/// Helper for constructing `TryFromIntError` since there is no public API for
+/// for doing so.
+fn tfie() -> TryFromIntError {
+    unsafe { mem::transmute(()) }
 }
 
 macro_rules! impl_try_into {
     ($($t:ty),* $(,)?) => {$(
-        impl TryInto<$t> for U256 {
+        impl TryFrom<U256> for $t {
             type Error = TryFromIntError;
 
             #[inline]
-            fn try_into(self) -> Result<$t, Self::Error> {
-                let x = TryInto::<u128>::try_into(self)?;
-                x.try_into()
+            fn try_from(x: U256) -> Result<Self, Self::Error> {
+                if x <= <$t>::MAX.as_u256() {
+                    Ok(*x.low() as _)
+                } else {
+                    Err(tfie())
+                }
             }
         }
     )*};
@@ -171,16 +165,16 @@ macro_rules! impl_try_into {
 
 impl_try_into! {
     i8, i16, i32, i64, i128,
-    u8, u16, u32, u64,
+    u8, u16, u32, u64, u128,
     isize, usize,
 }
 
 macro_rules! impl_into_float {
     ($($t:ty => $f:ident),* $(,)?) => {$(
-        impl Into<$t> for U256 {
+        impl From<U256> for $t {
             #[inline]
-            fn into(self) -> $t {
-                self.$f()
+            fn from(x: U256) -> $t {
+                x.$f()
             }
         }
     )*};
@@ -188,4 +182,14 @@ macro_rules! impl_into_float {
 
 impl_into_float! {
     f32 => as_f32, f64 => as_f64,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn from_int_error_conversion() {
+        assert_eq!(tfie(), u8::try_from(-1).unwrap_err());
+    }
 }

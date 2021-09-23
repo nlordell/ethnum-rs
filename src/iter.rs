@@ -1,8 +1,10 @@
 //! Module contains iterator specific trait implementations.
 
 use crate::U256;
-use core::iter::{Product, Sum};
-use core::ops::{Add, Mul};
+use core::{
+    iter::{Product, Sum},
+    ops::{Add, Mul},
+};
 
 impl Sum for U256 {
     fn sum<I: Iterator<Item = Self>>(iter: I) -> Self {

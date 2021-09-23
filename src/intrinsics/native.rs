@@ -10,11 +10,4 @@ mod shl;
 mod shr;
 mod sub;
 
-pub use self::add::*;
-pub use self::ctz::*;
-pub use self::divmod::*;
-pub use self::mul::*;
-pub use self::rotate::*;
-pub use self::shl::*;
-pub use self::shr::*;
-pub use self::sub::*;
+pub use self::{add::*, ctz::*, divmod::*, mul::*, rotate::*, shl::*, shr::*, sub::*};

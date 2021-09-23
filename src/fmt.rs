@@ -5,15 +5,18 @@
 //! https://doc.rust-lang.org/src/core/fmt/num.rs.html
 
 use crate::{AsU256, U256};
-use core::fmt;
-use core::mem::{self, MaybeUninit};
-use core::num::ParseIntError;
-use core::ptr;
-use core::slice;
-use core::str::{self, FromStr};
+use core::{
+    fmt,
+    mem::{self, MaybeUninit},
+    num::{IntErrorKind, ParseIntError},
+    ptr, slice,
+    str::{self, FromStr},
+};
 
 /// Converts a string slice in a given base to an `U256`.
 pub(crate) fn from_str_radix(src: &str, radix: u32) -> Result<U256, ParseIntError> {
+    use self::IntErrorKind::*;
+
     assert!(
         (2..=36).contains(&radix),
         "from_str_radix_int: must lie in the range `[2, 36]` - found {}",
@@ -21,41 +24,32 @@ pub(crate) fn from_str_radix(src: &str, radix: u32) -> Result<U256, ParseIntErro
     );
 
     if src.is_empty() {
-        return Err(Pie::Empty.into());
+        return Err(pie(Empty));
     }
 
     let mut result = U256::ZERO;
     for &c in src.as_bytes() {
         let x = match (c as char).to_digit(radix) {
             Some(x) => x,
-            None => return Err(Pie::InvalidDigit.into()),
+            None => return Err(pie(InvalidDigit)),
         };
         result = match result.checked_mul(radix.as_u256()) {
             Some(result) => result,
-            None => return Err(Pie::Overflow.into()),
+            None => return Err(pie(PosOverflow)),
         };
         result = match result.checked_add(x.as_u256()) {
             Some(result) => result,
-            None => return Err(Pie::Overflow.into()),
+            None => return Err(pie(PosOverflow)),
         };
     }
 
     Ok(result)
 }
 
-/// Helper type for constructing `ParseIntError` since there is no public API
-/// for doing so.
-enum Pie {
-    Empty,
-    InvalidDigit,
-    Overflow,
-}
-
-impl Into<ParseIntError> for Pie {
-    #[inline]
-    fn into(self) -> ParseIntError {
-        unsafe { mem::transmute(self) }
-    }
+/// Helper for constructing `ParseIntError` since there is no public API for
+/// doing so.
+fn pie(kind: IntErrorKind) -> ParseIntError {
+    unsafe { mem::transmute(kind) }
 }
 
 impl FromStr for U256 {
@@ -249,17 +243,25 @@ impl fmt::UpperExp for U256 {
 }
 
 #[cfg(test)]
-mod test {
+mod tests {
     use super::*;
     use alloc::format;
 
     #[test]
     fn parse_int_error() {
-        assert_eq!(U256::from_str_radix("", 2), Err(Pie::Empty.into()));
-        assert_eq!(U256::from_str_radix("?", 2), Err(Pie::InvalidDigit.into()));
         assert_eq!(
-            U256::from_str_radix("zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz", 36),
-            Err(Pie::Overflow.into())
+            U256::from_str_radix("", 2).unwrap_err().kind(),
+            &IntErrorKind::Empty,
+        );
+        assert_eq!(
+            U256::from_str_radix("?", 2).unwrap_err().kind(),
+            &IntErrorKind::InvalidDigit,
+        );
+        assert_eq!(
+            U256::from_str_radix("zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz", 36)
+                .unwrap_err()
+                .kind(),
+            &IntErrorKind::PosOverflow,
         );
     }
 
