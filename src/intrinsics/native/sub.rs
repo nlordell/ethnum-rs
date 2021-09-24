@@ -15,9 +15,7 @@ pub fn sub3(r: &mut MaybeUninit<U256>, a: &U256, b: &U256) {
     let (lo, carry) = a.low().overflowing_sub(*b.low());
     let hi = a.high().wrapping_sub(carry as _).wrapping_sub(*b.high());
 
-    unsafe {
-        r.as_mut_ptr().write(U256::from_words(hi, lo));
-    }
+    r.write(U256::from_words(hi, lo));
 }
 
 #[inline]
@@ -26,8 +24,6 @@ pub fn usubc(r: &mut MaybeUninit<U256>, a: &U256, b: &U256) -> bool {
     let (hi, carry_c) = a.high().overflowing_sub(carry_lo as _);
     let (hi, carry_hi) = hi.overflowing_sub(*b.high());
 
-    unsafe {
-        r.as_mut_ptr().write(U256::from_words(hi, lo));
-    }
+    r.write(U256::from_words(hi, lo));
     carry_c || carry_hi
 }

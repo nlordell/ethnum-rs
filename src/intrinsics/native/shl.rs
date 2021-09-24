@@ -30,7 +30,5 @@ pub fn ashl3(r: &mut MaybeUninit<U256>, a: &U256, b: u32) {
         (a.low() << (b & 0x7f), 0)
     };
 
-    unsafe {
-        r.as_mut_ptr().write(U256::from_words(hi, lo));
-    }
+    r.write(U256::from_words(hi, lo));
 }

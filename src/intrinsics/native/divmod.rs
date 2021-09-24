@@ -88,12 +88,6 @@ pub fn udivmod4(
     b: &U256,
     rem: Option<&mut MaybeUninit<U256>>,
 ) {
-    macro_rules! set {
-        ($x:ident = $value:expr) => {
-            unsafe { $x.as_mut_ptr().write($value) }
-        };
-    }
-
     // In the LLVM version on the x86_64 platform, `udiv256_by_128_to_128` would
     // defer to `divq` instruction, which divides a 128-bit value by a 64-bit
     // one returning a 64-bit value, making it very performant when dividing
@@ -109,9 +103,9 @@ pub fn udivmod4(
     // shortcut if the high and low values of the operands are 0:
     if a.high() | b.high() == 0 {
         if let Some(rem) = rem {
-            set!(rem = U256::from_words(0, a.low() % b.low()));
+            rem.write(U256::from_words(0, a.low() % b.low()));
         }
-        set!(res = U256::from_words(0, a.low() / b.low()));
+        res.write(U256::from_words(0, a.low() / b.low()));
         return;
     }
 
@@ -124,9 +118,9 @@ pub fn udivmod4(
 
     if divisor > dividend {
         if let Some(rem) = rem {
-            set!(rem = dividend);
+            rem.write(dividend);
         }
-        set!(res = U256::ZERO);
+        res.write(U256::ZERO);
         return;
     }
     // When the divisor fits in 128 bits, we can use an optimized path.
@@ -157,9 +151,9 @@ pub fn udivmod4(
             );
         }
         if let Some(rem) = rem {
-            set!(rem = remainder);
+            rem.write(remainder);
         }
-        set!(res = quotient);
+        res.write(quotient);
         return;
     }
 
@@ -186,9 +180,9 @@ pub fn udivmod4(
         divisor >>= 1;
     }
     if let Some(rem) = rem {
-        set!(rem = dividend);
+        rem.write(dividend);
     }
-    set!(res = quotient);
+    res.write(quotient);
 }
 
 #[inline]

@@ -37,11 +37,11 @@ def! {
     }
     pub unsafe fn add3(r: &mut MaybeUninit<u128>, a: &u128, b: &u128) {
         let res = a.wrapping_add(*b);
-        r.as_mut_ptr().write(res);
+        r.write(res);
     }
     pub unsafe fn uaddc(r: &mut MaybeUninit<u128>, a: &u128, b: &u128) -> bool {
         let (res, carry) = a.overflowing_add(*b);
-        r.as_mut_ptr().write(res);
+        r.write(res);
         carry
     }
 
@@ -50,11 +50,11 @@ def! {
     }
     pub unsafe fn sub3(r: &mut MaybeUninit<u128>, a: &u128, b: &u128) {
         let res = a.wrapping_sub(*b);
-        r.as_mut_ptr().write(res);
+        r.write(res);
     }
     pub unsafe fn usubc(r: &mut MaybeUninit<u128>, a: &u128, b: &u128) -> bool {
         let (res, carry) = a.overflowing_sub(*b);
-        r.as_mut_ptr().write(res);
+        r.write(res);
         carry
     }
 
@@ -63,11 +63,11 @@ def! {
     }
     pub unsafe fn umul3(r: &mut MaybeUninit<u128>, a: &u128, b: &u128) {
         let res = a.wrapping_mul(*b);
-        r.as_mut_ptr().write(res);
+        r.write(res);
     }
     pub unsafe fn umulc(r: &mut MaybeUninit<u128>, a: &u128, b: &u128) -> bool {
         let (res, carry) = a.overflowing_mul(*b);
-        r.as_mut_ptr().write(res);
+        r.write(res);
         carry
     }
 
@@ -76,7 +76,7 @@ def! {
     }
     pub unsafe fn ashl3(r: &mut MaybeUninit<u128>, a: &u128, b: u32) {
         let res = a.wrapping_shl(b);
-        r.as_mut_ptr().write(res);
+        r.write(res);
     }
 
     pub unsafe fn lshr2(r: &mut u128, a: u32) {
@@ -84,14 +84,14 @@ def! {
     }
     pub unsafe fn lshr3(r: &mut MaybeUninit<u128>, a: &u128, b: u32) {
         let res = a.wrapping_shr(b);
-        r.as_mut_ptr().write(res);
+        r.write(res);
     }
 
     pub unsafe fn rotate_left(r: &mut MaybeUninit<u128>, a: &u128, b: u32) {
-        r.as_mut_ptr().write(a.rotate_left(b))
+        r.write(a.rotate_left(b));
     }
     pub unsafe fn rotate_right(r: &mut MaybeUninit<u128>, a: &u128, b: u32) {
-        r.as_mut_ptr().write(a.rotate_right(b))
+        r.write(a.rotate_right(b));
     }
 
     pub unsafe fn ctlz(a: &u128) -> u32 {

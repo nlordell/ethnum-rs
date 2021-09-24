@@ -172,14 +172,11 @@ pub(crate) fn fmt_radix(
     for byte in buf.iter_mut().rev() {
         let n = (*x.low() as usize) % base;
         x /= base.as_u256(); // Deaccumulate the number.
-        unsafe {
-            #[cfg(debug_assertions)]
-            let digit = digits[n];
-            #[cfg(not(debug_assertions))]
-            let digit = *digits.get_unchecked(n);
-
-            byte.as_mut_ptr().write(digit); // Store the digit in the buffer.
-        };
+        #[cfg(debug_assertions)]
+        let digit = digits[n];
+        #[cfg(not(debug_assertions))]
+        let digit = unsafe { *digits.get_unchecked(n) };
+        byte.write(digit); // Store the digit in the buffer.
         curr -= 1;
         if x == 0 {
             // No more digits left to accumulate.

@@ -30,7 +30,5 @@ pub fn lshr3(r: &mut MaybeUninit<U256>, a: &U256, b: u32) {
         (0, a.high() >> (b & 0x7f))
     };
 
-    unsafe {
-        r.as_mut_ptr().write(U256::from_words(hi, lo));
-    }
+    r.write(U256::from_words(hi, lo));
 }

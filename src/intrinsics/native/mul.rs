@@ -51,9 +51,7 @@ pub fn umul3(res: &mut MaybeUninit<U256>, a: &U256, b: &U256) {
     let lo_hi = a.low().wrapping_mul(*b.high());
     *r.high_mut() = r.high().wrapping_add(hi_lo.wrapping_add(lo_hi));
 
-    unsafe {
-        res.as_mut_ptr().write(r);
-    }
+    res.write(r);
 }
 
 #[inline]
@@ -66,9 +64,7 @@ pub fn umulc(r: &mut MaybeUninit<U256>, a: &U256, b: &U256) -> bool {
     let (high, overflow_high) = res.high().overflowing_add(hi);
     *res.high_mut() = high;
 
-    unsafe {
-        r.as_mut_ptr().write(res);
-    }
+    r.write(res);
     overflow_hi_lo | overflow_lo_hi | overflow_hi | overflow_high
 }
 
