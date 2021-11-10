@@ -1,7 +1,8 @@
 //! Module contains conversions for [`U256`] to and from primimitive types.
 
-use crate::U256;
-use core::{convert::TryFrom, mem, num::TryFromIntError};
+use super::U256;
+use crate::{error::tfie, int::I256};
+use core::{convert::TryFrom, num::TryFromIntError};
 
 macro_rules! impl_from {
     ($($t:ty),* $(,)?) => {$(
@@ -34,6 +35,17 @@ macro_rules! impl_try_from {
 impl_try_from! {
     i8, i16, i32, i64, i128,
     isize, usize,
+}
+
+impl TryFrom<I256> for U256 {
+    type Error = TryFromIntError;
+
+    fn try_from(value: I256) -> Result<Self, Self::Error> {
+        if value < 0 {
+            return Err(tfie());
+        }
+        Ok(value.as_u256())
+    }
 }
 
 /// This trait defines `as` conversions (casting) from primitive types to
@@ -70,6 +82,13 @@ impl AsU256 for U256 {
     #[inline]
     fn as_u256(self) -> U256 {
         self
+    }
+}
+
+impl AsU256 for I256 {
+    #[inline]
+    fn as_u256(self) -> U256 {
+        I256::as_u256(self)
     }
 }
 
@@ -123,10 +142,10 @@ macro_rules! impl_as_u256_float {
                     let mantissa = (bits & MAN_MASK) | MAN_ONE;
                     if exponent <= 52 {
                         U256::from(mantissa >> (52 - exponent))
-                    } else if exponent >= 256 {
-                        U256::MAX
-                    } else {
+                    } else if exponent < 256 {
                         U256::from(mantissa) << (exponent - 52)
+                    } else {
+                        U256::MAX
                     }
                 } else {
                     U256::ZERO
@@ -138,12 +157,6 @@ macro_rules! impl_as_u256_float {
 
 impl_as_u256_float! {
     f32[u32], f64[u64],
-}
-
-/// Helper for constructing `TryFromIntError` since there is no public API for
-/// for doing so.
-fn tfie() -> TryFromIntError {
-    unsafe { mem::transmute(()) }
 }
 
 macro_rules! impl_try_into {
@@ -182,14 +195,4 @@ macro_rules! impl_into_float {
 
 impl_into_float! {
     f32 => as_f32, f64 => as_f64,
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn from_int_error_conversion() {
-        assert_eq!(tfie(), u8::try_from(-1).unwrap_err());
-    }
 }

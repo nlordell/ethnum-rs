@@ -1,7 +1,7 @@
 //! This module implements intrinsics for counting trailing and leading zeros
 //! for 256-bit integers.
 
-use crate::U256;
+use crate::uint::U256;
 
 #[inline]
 pub fn ctlz(a: &U256) -> u32 {

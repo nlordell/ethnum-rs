@@ -1,6 +1,6 @@
 //! Module implementing addition intrinsics.
 
-use crate::U256;
+use crate::{int::I256, uint::U256};
 use core::mem::MaybeUninit;
 
 #[inline]
@@ -26,4 +26,11 @@ pub fn uaddc(r: &mut MaybeUninit<U256>, a: &U256, b: &U256) -> bool {
 
     r.write(U256::from_words(hi, lo));
     carry_c || carry_hi
+}
+
+#[inline]
+pub fn iaddc(r: &mut MaybeUninit<I256>, a: &I256, b: &I256) -> bool {
+    add3(cast!(uninit: r), cast!(ref: a), cast!(ref: b));
+    let s = unsafe { r.assume_init_ref() };
+    (*b.high() >= 0 && s < a) || (*b.high() < 0 && s >= a)
 }

@@ -7,7 +7,7 @@
 //! This source is ported from LLVM project from C:
 //! https://github.com/llvm/llvm-project/blob/master/compiler-rt/lib/builtins/multi3.c
 
-use crate::U256;
+use crate::{int::I256, uint::U256};
 use core::mem::MaybeUninit;
 
 #[inline]
@@ -66,6 +66,21 @@ pub fn umulc(r: &mut MaybeUninit<U256>, a: &U256, b: &U256) -> bool {
 
     r.write(res);
     overflow_hi_lo | overflow_lo_hi | overflow_hi | overflow_high
+}
+
+#[inline]
+pub fn imul2(_: &mut I256, _: &I256) {
+    todo!()
+}
+
+#[inline]
+pub fn imul3(_: &mut MaybeUninit<I256>, _: &I256, _: &I256) {
+    todo!()
+}
+
+#[inline]
+pub fn imulc(_: &mut MaybeUninit<I256>, _: &I256, _: &I256) -> bool {
+    todo!()
 }
 
 #[cfg(test)]

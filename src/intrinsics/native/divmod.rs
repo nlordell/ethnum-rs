@@ -8,7 +8,7 @@
 //! This source is ported from LLVM project from C:
 //! https://github.com/llvm/llvm-project/blob/main/compiler-rt/lib/builtins/udivmodti4.c
 
-use crate::U256;
+use crate::{int::I256, uint::U256};
 use core::mem::MaybeUninit;
 
 #[inline(always)]
@@ -213,6 +213,30 @@ pub fn urem2(r: &mut U256, a: &U256) {
 pub fn urem3(r: &mut MaybeUninit<U256>, a: &U256, b: &U256) {
     let mut res = MaybeUninit::uninit();
     udivmod4(&mut res, a, b, Some(r));
+}
+
+pub fn idivmod4(_: &mut MaybeUninit<I256>, _: &I256, _: &I256, _: Option<&mut MaybeUninit<I256>>) {
+    todo!()
+}
+
+#[inline]
+pub fn idiv2(_: &mut I256, _: &I256) {
+    todo!()
+}
+
+#[inline]
+pub fn idiv3(_: &mut MaybeUninit<I256>, _: &I256, _: &I256) {
+    todo!()
+}
+
+#[inline]
+pub fn irem2(_: &mut I256, _: &I256) {
+    todo!()
+}
+
+#[inline]
+pub fn irem3(_: &mut MaybeUninit<I256>, _: &I256, _: &I256) {
+    todo!()
 }
 
 #[cfg(test)]
