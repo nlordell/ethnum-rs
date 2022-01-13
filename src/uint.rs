@@ -732,6 +732,30 @@ impl U256 {
         }
     }
 
+    /// Saturating integer division. Computes `self / rhs`, saturating at the
+    /// numeric bounds instead of overflowing.
+    ///
+    /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    /// ```
+    /// # use ethnum::U256;
+    /// assert_eq!(U256::new(5).saturating_div(U256::new(2)), U256::new(2));
+    /// ```
+    ///
+    /// ```should_panic
+    /// # use ethnum::U256;
+    /// let _ = U256::new(1).saturating_div(U256::ZERO);
+    /// ```
+    #[must_use = "this returns the result of the operation, \
+                  without modifying the original"]
+    #[inline]
+    pub fn saturating_div(self, rhs: Self) -> Self {
+        // on unsigned types, there is no overflow in integer division
+        self.wrapping_div(rhs)
+    }
+
     /// Saturating integer exponentiation. Computes `self.pow(exp)`, saturating
     /// at the numeric bounds instead of overflowing.
     ///
