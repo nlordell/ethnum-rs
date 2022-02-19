@@ -24,7 +24,7 @@ impl_ops! {
         rem => urem2, urem3;
 
         shl => ushl2, ushl3;
-        shr => usar2, ushr3;
+        shr => ushr2, ushr3;
     }
 }
 

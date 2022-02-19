@@ -49,7 +49,7 @@ mod tests {
         // Note that there is no '-' sign for binary, octal or hex formatting!
         // This is the same behaviour for the standard iN types.
         assert_eq!(format!("{:b}", I256::MINUS_ONE), "1".repeat(256));
-        assert_eq!(format!("{:o}", I256::MINUS_ONE), format!("1{}", "7".repeat(85)));
+        assert_eq!(format!("{:o}", I256::MINUS_ONE), format!("{:7<86}", "1"));
         assert_eq!(format!("{:x}", I256::MINUS_ONE), "f".repeat(64));
     }
 
