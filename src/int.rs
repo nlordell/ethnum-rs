@@ -7,6 +7,7 @@ mod fmt;
 mod iter;
 mod ops;
 
+pub use self::convert::AsI256;
 use crate::uint::U256;
 
 /// A 256-bit unsigned integer type.
@@ -211,7 +212,6 @@ mod tests {
     use crate::I256;
 
     #[test]
-    #[ignore]
     #[allow(clippy::float_cmp)]
     fn converts_to_f64() {
         assert_eq!((-I256::from_words(1, 0)).as_f64(), -(2.0f64.powi(128)))

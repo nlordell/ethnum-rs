@@ -1,12 +1,13 @@
-//! This module contains a Rust port of the `__udivmodti4` compiler builtin that
-//! is typically used for implementing 64-bit unsigned division on 32-bit
-//! platforms.
+//! This module contains a Rust port of the `__u?divmodti4` compiler builtins
+//! that are typically used for implementing 64-bit signed and unsigned division
+//! on 32-bit platforms.
 //!
 //! This port is adapted to use 128-bit high and low words in order to implement
-//! 256-bit unsigned division.
+//! 256-bit division.
 //!
 //! This source is ported from LLVM project from C:
-//! https://github.com/llvm/llvm-project/blob/main/compiler-rt/lib/builtins/udivmodti4.c
+//! - signed division: https://github.com/llvm/llvm-project/blob/main/compiler-rt/lib/builtins/divmodti4.c
+//! - unsigned division: https://github.com/llvm/llvm-project/blob/main/compiler-rt/lib/builtins/udivmodti4.c
 
 use crate::{int::I256, uint::U256};
 use core::mem::MaybeUninit;
@@ -215,28 +216,62 @@ pub fn urem3(r: &mut MaybeUninit<U256>, a: &U256, b: &U256) {
     udivmod4(&mut res, a, b, Some(r));
 }
 
-pub fn idivmod4(_: &mut MaybeUninit<I256>, _: &I256, _: &I256, _: Option<&mut MaybeUninit<I256>>) {
-    todo!()
+pub fn idivmod4(
+    res: &mut MaybeUninit<I256>,
+    a: &I256,
+    b: &I256,
+    rem: Option<&mut MaybeUninit<I256>>,
+) {
+    const BITS_IN_TWORD_M1: u32 = 255;
+    let s_a = a >> BITS_IN_TWORD_M1; // s_a = a < 0 ? -1 : 0
+    let mut s_b = b >> BITS_IN_TWORD_M1; // s_b = b < 0 ? -1 : 0
+    let a = (a ^ s_a).wrapping_sub(s_a); // negate if s_a == -1
+    let b = (b ^ s_b).wrapping_sub(s_b); // negate if s_b == -1
+    s_b ^= s_a; // sign of quotient
+    udivmod4(
+        cast!(uninit: res),
+        cast!(ref: &a),
+        cast!(ref: &b),
+        cast!(optuninit: rem),
+    );
+    let q = unsafe { res.assume_init_ref() };
+    let q = (q ^ s_b).wrapping_sub(s_b); // negate if s_b == -1
+    res.write(q);
+    if let Some(rem) = rem {
+        let r = unsafe { rem.assume_init_ref() };
+        let r = (r ^ s_a).wrapping_sub(s_a);
+        rem.write(r);
+    }
 }
 
 #[inline]
-pub fn idiv2(_: &mut I256, _: &I256) {
-    todo!()
+pub fn idiv2(r: &mut I256, a: &I256) {
+    let (a, b) = (*r, a);
+    // SAFETY: `udivmod4` does not write `MaybeUninit::uninit()` to `res` and
+    // `U256` does not implement `Drop`.
+    let res = unsafe { &mut *(r as *mut I256).cast() };
+    idivmod4(res, &a, b, None);
 }
 
 #[inline]
-pub fn idiv3(_: &mut MaybeUninit<I256>, _: &I256, _: &I256) {
-    todo!()
+pub fn idiv3(r: &mut MaybeUninit<I256>, a: &I256, b: &I256) {
+    idivmod4(r, a, b, None);
 }
 
 #[inline]
-pub fn irem2(_: &mut I256, _: &I256) {
-    todo!()
+pub fn irem2(r: &mut I256, a: &I256) {
+    let mut res = MaybeUninit::uninit();
+    let (a, b) = (*r, a);
+    // SAFETY: `udivmod4` does not write `MaybeUninit::uninit()` to `rem` and
+    // `U256` does not implement `Drop`.
+    let r = unsafe { &mut *(r as *mut I256).cast() };
+    idivmod4(&mut res, &a, b, Some(r));
 }
 
 #[inline]
-pub fn irem3(_: &mut MaybeUninit<I256>, _: &I256, _: &I256) {
-    todo!()
+pub fn irem3(r: &mut MaybeUninit<I256>, a: &I256, b: &I256) {
+    let mut res = MaybeUninit::uninit();
+    idivmod4(&mut res, a, b, Some(r));
 }
 
 #[cfg(test)]

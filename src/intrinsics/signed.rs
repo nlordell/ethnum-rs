@@ -4,10 +4,10 @@
 //! This module can be helpful when using intrinsics directly.
 
 pub use super::{
-    add2 as uadd2, add3 as uadd3, ctlz as uctlz, cttz as ucttz, iaddc, idiv2, idiv3, imul2, imul3,
-    imulc, irem2, irem3, isubc, rol3 as urol3, ror3 as uror3, sar2 as isar2, sar3 as isar3,
-    shl2 as ushl2, shl3 as ushl3, shr2 as ushr2, shr3 as ushr3, sub2 as usub2, sub3 as usub3,
-    uaddc, udiv2, udiv3, umul2, umul3, umulc, urem2, urem3, usubc,
+    add2 as uadd2, add3 as uadd3, ctlz as uctlz, cttz as ucttz, iaddc, idiv2, idiv3, imulc, irem2,
+    irem3, isubc, mul2 as umul2, mul3 as umul3, rol3 as urol3, ror3 as uror3, sar2 as isar2,
+    sar3 as isar3, shl2 as ushl2, shl3 as ushl3, shr2 as ushr2, shr3 as ushr3, sub2 as usub2,
+    sub3 as usub3, uaddc, udiv2, udiv3, umulc, urem2, urem3, usubc,
 };
 use crate::int::I256;
 use core::mem::MaybeUninit;
@@ -30,6 +30,16 @@ pub fn isub2(r: &mut I256, a: &I256) {
 #[inline]
 pub fn isub3(r: &mut MaybeUninit<I256>, a: &I256, b: &I256) {
     super::sub3(cast!(uninit: r), cast!(ref: a), cast!(ref: b));
+}
+
+#[inline]
+pub fn imul2(r: &mut I256, a: &I256) {
+    super::mul2(cast!(mut: r), cast!(ref: a));
+}
+
+#[inline]
+pub fn imul3(r: &mut MaybeUninit<I256>, a: &I256, b: &I256) {
+    super::mul3(cast!(uninit: r), cast!(ref: a), cast!(ref: b));
 }
 
 #[inline]

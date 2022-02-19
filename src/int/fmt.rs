@@ -20,23 +20,23 @@ mod tests {
     fn debug() {
         assert_eq!(
             format!("{:?}", I256::MAX),
-            "115792089237316195423570985008687907853269984665640564039457584007913129639935",
+            "57896044618658097711785492504343953926634992332820282019728792003956564819967",
         );
         assert_eq!(
-            format!("{:x?}", I256::MAX),
-            "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            format!("{:x?}", I256::MIN),
+            "8000000000000000000000000000000000000000000000000000000000000000",
         );
         assert_eq!(
             format!("{:#X?}", I256::MAX),
-            "0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF",
+            "0x7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF",
         );
     }
 
     #[test]
     fn display() {
         assert_eq!(
-            format!("{}", I256::MAX),
-            "115792089237316195423570985008687907853269984665640564039457584007913129639935",
+            format!("{}", I256::MIN),
+            "-57896044618658097711785492504343953926634992332820282019728792003956564819968",
         );
     }
 
@@ -45,12 +45,18 @@ mod tests {
         assert_eq!(format!("{:b}", I256::new(42)), "101010");
         assert_eq!(format!("{:o}", I256::new(42)), "52");
         assert_eq!(format!("{:x}", I256::new(42)), "2a");
+
+        // Note that there is no '-' sign for binary, octal or hex formatting!
+        // This is the same behaviour for the standard iN types.
+        assert_eq!(format!("{:b}", I256::MINUS_ONE), "1".repeat(256));
+        assert_eq!(format!("{:o}", I256::MINUS_ONE), format!("1{}", "7".repeat(85)));
+        assert_eq!(format!("{:x}", I256::MINUS_ONE), "f".repeat(64));
     }
 
     #[test]
     fn exp() {
         assert_eq!(format!("{:e}", I256::new(42)), "4.2e1");
-        assert_eq!(format!("{:e}", I256::new(10).pow(77)), "1e77");
-        assert_eq!(format!("{:E}", I256::new(10).pow(39) * 1337), "1.337E42");
+        assert_eq!(format!("{:e}", I256::new(10).pow(76)), "1e76");
+        assert_eq!(format!("{:E}", -I256::new(10).pow(39) * 1337), "-1.337E42");
     }
 }

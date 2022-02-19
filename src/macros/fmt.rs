@@ -81,12 +81,12 @@ macro_rules! impl_fmt {
 
         impl ::core::fmt::LowerExp for $int {
             fn fmt(&self, f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
-                // TODO(nlordell): Ideally this should be implemented with a similar
+                // TODO(nlordell): Ideally this should be implemented similarly
                 // to the primitive integer types as seen here:
                 // https://doc.rust-lang.org/src/core/fmt/num.rs.html#274
-                // Unfortunately, just porting this implementation is not possible as it
-                // requires private standard library items. For now, just convert to
-                // a `f64` as an approximation.
+                // Unfortunately, just porting this implementation is not
+                // possible as it requires private standard library items. For
+                // now, just convert to a `f64` as an approximation.
                 ::core::fmt::LowerExp::fmt(&self.as_f64(), f)
             }
         }

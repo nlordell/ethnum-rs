@@ -20,7 +20,7 @@ impl Ord for I256 {
         match self.high().cmp(other.high()) {
             Ordering::Less => Ordering::Less,
             Ordering::Equal => {
-                let (a, b) = if self.high().is_positive() {
+                let (a, b) = if *self.high() >= 0 {
                     (self, other)
                 } else {
                     (other, self)

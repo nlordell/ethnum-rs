@@ -15,7 +15,7 @@ pub fn sar2(r: &mut I256, a: u32) {
             ((*r.low() as u128) >> a | ((*r.high() as u128) << (128 - a))) as i128,
         )
     } else {
-        (r.high() >> 128, (r.high() >> (a & 0x7f)))
+        (r.high() >> 127, (r.high() >> (a & 0x7f)))
     };
 
     *r = I256::from_words(hi, lo);
@@ -33,7 +33,7 @@ pub fn sar3(r: &mut MaybeUninit<I256>, a: &I256, b: u32) {
             ((*a.low() as u128) >> b | ((*a.high() as u128) << (128 - b))) as i128,
         )
     } else {
-        (a.high() >> 128, a.high() >> (b & 0x7f))
+        (a.high() >> 127, a.high() >> (b & 0x7f))
     };
 
     r.write(I256::from_words(hi, lo));

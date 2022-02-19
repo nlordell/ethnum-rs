@@ -530,8 +530,8 @@ macro_rules! __impl_ops_bitwise_assign {
             fn $method(&mut self, rhs: &'_ $int) {
                 let $int([a0, a1]) = self;
                 let $int([b0, b1]) = rhs;
-                *a0 <<= b0;
-                *a1 <<= b1;
+                *a0 $x b0;
+                *a1 $x b1;
             }
         }
 

@@ -11,4 +11,7 @@ macro_rules! cast {
     (uninit: $x:expr) => {
         unsafe { &mut *($x).as_mut_ptr().cast::<MaybeUninit<$crate::uint::U256>>() }
     };
+    (optuninit: $x:expr) => {
+        unsafe { ::core::mem::transmute(::core::ptr::read(&$x as *const _)) }
+    };
 }

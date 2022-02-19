@@ -29,5 +29,3 @@ macro_rules! impl_iter {
         }
     };
 }
-
-// TODO(nlordell): Implement `core::iter::Step` once it stabilizes.

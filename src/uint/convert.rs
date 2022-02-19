@@ -130,7 +130,7 @@ macro_rules! impl_as_u256_float {
                 // - `(0, U256::MAX]` => `value as U256`
                 // - `(U256::MAX, +∞)` => `U256::MAX`
 
-                const M: u32 = <$t>::MANTISSA_DIGITS - 1;
+                const M: $b = (<$t>::MANTISSA_DIGITS - 1) as _;
                 const MAN_MASK: $b = !(!0 << M);
                 const MAN_ONE: $b = 1 << M;
                 const EXP_MASK: $b = !0 >> <$t>::MANTISSA_DIGITS;
@@ -140,10 +140,10 @@ macro_rules! impl_as_u256_float {
                     let bits = self.to_bits();
                     let exponent = ((bits >> M) & EXP_MASK) - EXP_OFFSET;
                     let mantissa = (bits & MAN_MASK) | MAN_ONE;
-                    if exponent <= 52 {
-                        U256::from(mantissa >> (52 - exponent))
+                    if exponent <= M {
+                        U256::from(mantissa >> (M - exponent))
                     } else if exponent < 256 {
-                        U256::from(mantissa) << (exponent - 52)
+                        U256::from(mantissa) << (exponent - M)
                     } else {
                         U256::MAX
                     }

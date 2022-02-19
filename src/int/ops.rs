@@ -5,7 +5,7 @@
 //!
 //! ```
 //! # use ethnum::I256;
-//! 
+//!
 //! let a = 1 + I256::ONE;
 //! let b = I256::ONE + 1;
 //! dbg!(a, b);

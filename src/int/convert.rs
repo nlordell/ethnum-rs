@@ -48,7 +48,7 @@ impl TryFrom<U256> for I256 {
 /// assert_eq!(u32::MAX.as_i256(), 0xffffffff);
 ///
 /// assert_eq!(-13.37f64.as_i256(), -13);
-/// assert_eq!(42.0f64.as_i256(), -13);
+/// assert_eq!(42.0f64.as_i256(), 42);
 /// assert_eq!(
 ///     f32::MAX.as_i256(),
 ///     0xffffff00000000000000000000000000u128.as_i256(),
@@ -59,7 +59,7 @@ impl TryFrom<U256> for I256 {
 /// );
 ///
 /// assert_eq!(f64::NEG_INFINITY.as_i256(), I256::MIN);
-/// assert_eq!(-2.0f64.powi(256).as_i256(), I256::MIN);
+/// assert_eq!((-2.0f64.powi(256)).as_i256(), I256::MIN);
 /// assert_eq!(f64::INFINITY.as_i256(), I256::MAX);
 /// assert_eq!(2.0f64.powi(256).as_i256(), I256::MAX);
 /// assert_eq!(f64::NAN.as_i256(), 0);
@@ -124,7 +124,7 @@ macro_rules! impl_as_i256_float {
                 // - `(I256::MIN, I256::MAX]` => `value as I256`
                 // - `(I256::MAX, +∞)` => `I256::MAX`
 
-                const M: u32 = <$t>::MANTISSA_DIGITS - 1;
+                const M: $b = (<$t>::MANTISSA_DIGITS - 1) as _;
                 const MAN_MASK: $b = !(!0 << M);
                 const MAN_ONE: $b = 1 << M;
                 const EXP_MASK: $b = !0 >> <$t>::MANTISSA_DIGITS;
@@ -133,15 +133,16 @@ macro_rules! impl_as_i256_float {
                 const SIG_MASK: $b = !ABS_MASK;
 
                 let abs = <$t>::from_bits(self.to_bits() & ABS_MASK);
+                let sign = -(((self.to_bits() & SIG_MASK) >> (<$b>::BITS - 2)) as i128)
+                    .wrapping_sub(1); // if self >= 0. { 1 } else { -1 }
                 if abs >= 1.0 {
                     let bits = abs.to_bits();
                     let exponent = ((bits >> M) & EXP_MASK) - EXP_OFFSET;
                     let mantissa = (bits & MAN_MASK) | MAN_ONE;
-                    let sign = if bits & SIG_MASK == 0 { 1 } else { -1 };
-                    if exponent <= 52 {
-                        (I256::from(mantissa >> (52 - exponent))) * sign
+                    if exponent <= M {
+                        (I256::from(mantissa >> (M - exponent))) * sign
                     } else if exponent < 255 {
-                        (I256::from(mantissa) << (exponent - 52)) * sign
+                        (I256::from(mantissa) << (exponent - M)) * sign
                     } else if sign > 0 {
                         I256::MAX
                     } else {
