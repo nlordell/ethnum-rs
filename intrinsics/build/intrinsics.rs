@@ -68,10 +68,10 @@ def! {
         carry
     }
 
-    pub unsafe fn umul2(r: &mut u128, a: &u128) {
+    pub unsafe fn mul2(r: &mut u128, a: &u128) {
         *r *= *a;
     }
-    pub unsafe fn umul3(r: &mut MaybeUninit<u128>, a: &u128, b: &u128) {
+    pub unsafe fn mul3(r: &mut MaybeUninit<u128>, a: &u128, b: &u128) {
         let res = a.wrapping_mul(*b);
         r.write(res);
     }
@@ -80,19 +80,6 @@ def! {
         r.write(res);
         carry
     }
-
-    pub unsafe fn imul2(r: &mut i128, a: &i128) {
-        *r *= *a;
-    }
-    pub unsafe fn imul3(r: &mut MaybeUninit<i128>, a: &i128, b: &i128) {
-        let res = a.wrapping_mul(*b);
-        r.write(res);
-    }
-    // pub unsafe fn imulc(r: &mut MaybeUninit<i128>, a: &i128, b: &i128) -> bool {
-    //     let (res, carry) = a.overflowing_mul(*b);
-    //     r.write(res);
-    //     carry
-    // }
 
     pub unsafe fn shl2(r: &mut u128, a: u32) {
         *r <<= a;

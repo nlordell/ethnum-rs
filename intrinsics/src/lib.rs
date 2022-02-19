@@ -44,12 +44,9 @@ def! {
     pub fn uaddc(r: &mut MaybeUninit<I256>, a: &I256, b: &I256) -> bool;
     pub fn iaddc(r: &mut MaybeUninit<I256>, a: &I256, b: &I256) -> bool;
 
-    pub fn umul2(r: &mut I256, a: &I256);
-    pub fn umul3(r: &mut MaybeUninit<I256>, a: &I256, b: &I256);
+    pub fn mul2(r: &mut I256, a: &I256);
+    pub fn mul3(r: &mut MaybeUninit<I256>, a: &I256, b: &I256);
     pub fn umulc(r: &mut MaybeUninit<I256>, a: &I256, b: &I256) -> bool;
-    pub fn imul2(r: &mut I256, a: &I256);
-    pub fn imul3(r: &mut MaybeUninit<I256>, a: &I256, b: &I256);
-    //pub fn imulc(r: &mut MaybeUninit<I256>, a: &I256, b: &I256) -> bool;
 
     pub fn sub2(r: &mut I256, a: &I256);
     pub fn sub3(r: &mut MaybeUninit<I256>, a: &I256, b: &I256);

@@ -45,12 +45,9 @@ def! {
     pub fn usubc(r: &mut MaybeUninit<U256>, a: &U256, b: &U256) -> bool;
     pub fn isubc(r: &mut MaybeUninit<I256>, a: &I256, b: &I256) -> bool;
 
-    pub fn umul2(r: &mut U256, a: &U256);
-    pub fn umul3(r: &mut MaybeUninit<U256>, a: &U256, b: &U256);
+    pub fn mul2(r: &mut U256, a: &U256);
+    pub fn mul3(r: &mut MaybeUninit<U256>, a: &U256, b: &U256);
     pub fn umulc(r: &mut MaybeUninit<U256>, a: &U256, b: &U256) -> bool;
-    pub fn imul2(r: &mut I256, a: &I256);
-    pub fn imul3(r: &mut MaybeUninit<I256>, a: &I256, b: &I256);
-    //pub fn imulc(r: &mut MaybeUninit<U256>, a: &U256, b: &U256) -> bool;
 
     pub fn shl2(r: &mut U256, a: u32);
     pub fn shl3(r: &mut MaybeUninit<U256>, a: &U256, b: u32);

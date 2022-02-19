@@ -2037,15 +2037,3 @@ impl I256 {
         unsafe { mem::transmute(bytes) }
     }
 }
-/*
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn doc() {
-        assert_eq!(I256::new(100).wrapping_add(I256::new(27)), 127);
-        assert_eq!(I256::MAX.wrapping_add(I256::new(2)), I256::MIN + 1);
-    }
-}
-*/
