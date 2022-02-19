@@ -52,9 +52,9 @@ impl I256 {
 
     /// Converts a string slice in a given base to an integer.
     ///
-    /// The string is expected to be an optional `+` or `-` sign followed by digits.
-    /// Leading and trailing whitespace represent an error. Digits are a subset of these characters,
-    /// depending on `radix`:
+    /// The string is expected to be an optional `+` or `-` sign followed by
+    /// digits. Leading and trailing whitespace represent an error. Digits are a
+    /// subset of these characters, depending on `radix`:
     ///
     ///  * `0-9`
     ///  * `a-z`
@@ -113,7 +113,8 @@ impl I256 {
         a.count_zeros() + b.count_zeros()
     }
 
-    /// Returns the number of leading zeros in the binary representation of `self`.
+    /// Returns the number of leading zeros in the binary representation of
+    /// `self`.
     ///
     /// # Examples
     ///
@@ -130,7 +131,8 @@ impl I256 {
         intrinsics::signed::ictlz(&self)
     }
 
-    /// Returns the number of trailing zeros in the binary representation of `self`.
+    /// Returns the number of trailing zeros in the binary representation of
+    /// `self`.
     ///
     /// # Examples
     ///
@@ -147,7 +149,8 @@ impl I256 {
         intrinsics::signed::icttz(&self)
     }
 
-    /// Returns the number of leading ones in the binary representation of `self`.
+    /// Returns the number of leading ones in the binary representation of
+    /// `self`.
     ///
     /// # Examples
     ///
@@ -164,7 +167,8 @@ impl I256 {
         (!self).leading_zeros()
     }
 
-    /// Returns the number of trailing ones in the binary representation of `self`.
+    /// Returns the number of trailing ones in the binary representation of
+    /// `self`.
     ///
     /// # Examples
     ///
@@ -265,8 +269,9 @@ impl I256 {
         Self([b.swap_bytes(), a.swap_bytes()])
     }
 
-    /// Reverses the order of bits in the integer. The least significant bit becomes the most significant bit,
-    ///                 second least-significant bit becomes second most-significant bit, etc.
+    /// Reverses the order of bits in the integer. The least significant bit
+    /// becomes the most significant bit, second least-significant bit becomes
+    /// second most-significant bit, etc.
     ///
     /// # Examples
     ///
@@ -463,8 +468,8 @@ impl I256 {
         }
     }
 
-    /// Checked integer multiplication. Computes `self * rhs`, returning `None` if
-    /// overflow occurred.
+    /// Checked integer multiplication. Computes `self * rhs`, returning `None`
+    /// if overflow occurred.
     ///
     /// # Examples
     ///
@@ -487,8 +492,8 @@ impl I256 {
         }
     }
 
-    /// Checked integer division. Computes `self / rhs`, returning `None` if `rhs == 0`
-    /// or the division results in overflow.
+    /// Checked integer division. Computes `self / rhs`, returning `None` if
+    /// `rhs == 0` or the division results in overflow.
     ///
     /// # Examples
     ///
@@ -563,8 +568,8 @@ impl I256 {
         }
     }
 
-    /// Checked Euclidean remainder. Computes `self.rem_euclid(rhs)`, returning `None`
-    /// if `rhs == 0` or the division results in overflow.
+    /// Checked Euclidean remainder. Computes `self.rem_euclid(rhs)`, returning
+    /// `None` if `rhs == 0` or the division results in overflow.
     ///
     /// # Examples
     ///
@@ -608,8 +613,8 @@ impl I256 {
         }
     }
 
-    /// Checked shift left. Computes `self << rhs`, returning `None` if `rhs` is larger
-    /// than or equal to the number of bits in `self`.
+    /// Checked shift left. Computes `self << rhs`, returning `None` if `rhs`
+    /// is larger than or equal to the number of bits in `self`.
     ///
     /// # Examples
     ///
@@ -632,8 +637,8 @@ impl I256 {
         }
     }
 
-    /// Checked shift right. Computes `self >> rhs`, returning `None` if `rhs` is
-    /// larger than or equal to the number of bits in `self`.
+    /// Checked shift right. Computes `self >> rhs`, returning `None` if `rhs`
+    /// is larger than or equal to the number of bits in `self`.
     ///
     /// # Examples
     ///
@@ -713,8 +718,8 @@ impl I256 {
         acc.checked_mul(base)
     }
 
-    /// Saturating integer addition. Computes `self + rhs`, saturating at the numeric
-    /// bounds instead of overflowing.
+    /// Saturating integer addition. Computes `self + rhs`, saturating at the
+    /// numeric bounds instead of overflowing.
     ///
     /// # Examples
     ///
@@ -772,8 +777,8 @@ impl I256 {
         }
     }
 
-    /// Saturating integer negation. Computes `-self`, returning `MAX` if `self == MIN`
-    /// instead of overflowing.
+    /// Saturating integer negation. Computes `-self`, returning `MAX` if
+    /// `self == MIN` instead of overflowing.
     ///
     /// # Examples
     ///
@@ -792,8 +797,8 @@ impl I256 {
         I256::ZERO.saturating_sub(self)
     }
 
-    /// Saturating absolute value. Computes `self.abs()`, returning `MAX` if `self ==
-    /// MIN` instead of overflowing.
+    /// Saturating absolute value. Computes `self.abs()`, returning `MAX` if
+    /// `self == MIN` instead of overflowing.
     ///
     /// # Examples
     ///
@@ -816,8 +821,8 @@ impl I256 {
         }
     }
 
-    /// Saturating integer multiplication. Computes `self * rhs`, saturating at the
-    /// numeric bounds instead of overflowing.
+    /// Saturating integer multiplication. Computes `self * rhs`, saturating at
+    /// the numeric bounds instead of overflowing.
     ///
     /// # Examples
     ///
@@ -897,8 +902,8 @@ impl I256 {
         }
     }
 
-    /// Wrapping (modular) addition. Computes `self + rhs`, wrapping around at the
-    /// boundary of the type.
+    /// Wrapping (modular) addition. Computes `self + rhs`, wrapping around at
+    /// the boundary of the type.
     ///
     /// # Examples
     ///
@@ -918,8 +923,8 @@ impl I256 {
         unsafe { result.assume_init() }
     }
 
-    /// Wrapping (modular) subtraction. Computes `self - rhs`, wrapping around at the
-    /// boundary of the type.
+    /// Wrapping (modular) subtraction. Computes `self - rhs`, wrapping around
+    /// at the boundary of the type.
     ///
     /// # Examples
     ///
@@ -939,8 +944,8 @@ impl I256 {
         unsafe { result.assume_init() }
     }
 
-    /// Wrapping (modular) multiplication. Computes `self * rhs`, wrapping around at
-    /// the boundary of the type.
+    /// Wrapping (modular) multiplication. Computes `self * rhs`, wrapping
+    /// around at the boundary of the type.
     ///
     /// # Examples
     ///
@@ -960,12 +965,14 @@ impl I256 {
         unsafe { result.assume_init() }
     }
 
-    /// Wrapping (modular) division. Computes `self / rhs`, wrapping around at the
-    /// boundary of the type.
+    /// Wrapping (modular) division. Computes `self / rhs`, wrapping around at
+    /// the boundary of the type.
     ///
-    /// The only case where such wrapping can occur is when one divides `MIN / -1` on a signed type (where
-    /// `MIN` is the negative minimal value for the type); this is equivalent to `-MIN`, a positive value
-    /// that is too large to represent in the type. In such a case, this function returns `MIN` itself.
+    /// The only case where such wrapping can occur is when one divides
+    /// `MIN / -1` on a signed type (where `MIN` is the negative minimal value
+    /// for the type); this is equivalent to `-MIN`, a positive value that is
+    /// too large to represent in the type. In such a case, this function
+    /// returns `MIN` itself.
     ///
     /// # Panics
     ///
@@ -990,9 +997,10 @@ impl I256 {
     /// Wrapping Euclidean division. Computes `self.div_euclid(rhs)`,
     /// wrapping around at the boundary of the type.
     ///
-    /// Wrapping will only occur in `MIN / -1` on a signed type (where `MIN` is the negative minimal value
-    /// for the type). This is equivalent to `-MIN`, a positive value that is too large to represent in the
-    /// type. In this case, this method returns `MIN` itself.
+    /// Wrapping will only occur in `MIN / -1` on a signed type (where `MIN` is
+    /// the negative minimal value for the type). This is equivalent to `-MIN`,
+    /// a positive value that is too large to represent in the type. In this
+    /// case, this method returns `MIN` itself.
     ///
     /// # Panics
     ///
@@ -1014,12 +1022,13 @@ impl I256 {
         self.overflowing_div_euclid(rhs).0
     }
 
-    /// Wrapping (modular) remainder. Computes `self % rhs`, wrapping around at the
-    /// boundary of the type.
+    /// Wrapping (modular) remainder. Computes `self % rhs`, wrapping around at
+    /// the boundary of the type.
     ///
-    /// Such wrap-around never actually occurs mathematically; implementation artifacts make `x % y`
-    /// invalid for `MIN / -1` on a signed type (where `MIN` is the negative minimal value). In such a case,
-    /// this function returns `0`.
+    /// Such wrap-around never actually occurs mathematically; implementation
+    /// artifacts make `x % y` invalid for `MIN / -1` on a signed type (where 
+    /// MIN` is the negative minimal value). In such a case, this function
+    /// returns `0`.
     ///
     /// # Panics
     ///
@@ -1041,11 +1050,12 @@ impl I256 {
         self.overflowing_rem(rhs).0
     }
 
-    /// Wrapping Euclidean remainder. Computes `self.rem_euclid(rhs)`, wrapping around
-    /// at the boundary of the type.
+    /// Wrapping Euclidean remainder. Computes `self.rem_euclid(rhs)`, wrapping
+    /// around at the boundary of the type.
     ///
-    /// Wrapping will only occur in `MIN % -1` on a signed type (where `MIN` is the negative minimal value
-    /// for the type). In this case, this method returns 0.
+    /// Wrapping will only occur in `MIN % -1` on a signed type (where `MIN` is
+    /// the negative minimal value for the type). In this case, this method
+    /// returns 0.
     ///
     /// # Panics
     ///
@@ -1067,12 +1077,13 @@ impl I256 {
         self.overflowing_rem_euclid(rhs).0
     }
 
-    /// Wrapping (modular) negation. Computes `-self`, wrapping around at the boundary
-    /// of the type.
+    /// Wrapping (modular) negation. Computes `-self`, wrapping around at the
+    /// boundary of the type.
     ///
-    /// The only case where such wrapping can occur is when one negates `MIN` on a signed type (where `MIN`
-    /// is the negative minimal value for the type); this is a positive value that is too large to represent
-    /// in the type. In such a case, this function returns `MIN` itself.
+    /// The only case where such wrapping can occur is when one negates `MIN` on
+    /// a signed type (where `MIN` is the negative minimal value for the type);
+    /// this is a positive value that is too large to represent in the type. In
+    /// such a case, this function returns `MIN` itself.
     ///
     /// # Examples
     ///
@@ -1088,13 +1099,15 @@ impl I256 {
         Self::ZERO.wrapping_sub(self)
     }
 
-    /// Panic-free bitwise shift-left; yields `self << mask(rhs)`, where `mask` removes
-    /// any high-order bits of `rhs` that would cause the shift to exceed the bitwidth of the type.
+    /// Panic-free bitwise shift-left; yields `self << mask(rhs)`, where `mask`
+    /// removes any high-order bits of `rhs` that would cause the shift to
+    /// exceed the bitwidth of the type.
     ///
-    /// Note that this is *not* the same as a rotate-left; the RHS of a wrapping shift-left is restricted to
-    /// the range of the type, rather than the bits shifted out of the LHS being returned to the other end.
-    /// The primitive integer types all implement a [`rotate_left`](Self::rotate_left) function,
-    /// which may be what you want instead.
+    /// Note that this is *not* the same as a rotate-left; the RHS of a wrapping
+    /// shift-left is restricted to the range of the type, rather than the bits
+    /// shifted out of the LHS being returned to the other end. The primitive
+    /// integer types all implement a [`rotate_left`](Self::rotate_left)
+    /// function, which may be what you want instead.
     ///
     /// # Examples
     ///
@@ -1116,12 +1129,15 @@ impl I256 {
     }
 
     /// Panic-free bitwise shift-right; yields `self >> mask(rhs)`, where `mask`
-    /// removes any high-order bits of `rhs` that would cause the shift to exceed the bitwidth of the type.
+    /// removes any high-order bits of `rhs` that would cause the shift to
+    /// exceed the bitwidth of the type.
     ///
-    /// Note that this is *not* the same as a rotate-right; the RHS of a wrapping shift-right is restricted
-    /// to the range of the type, rather than the bits shifted out of the LHS being returned to the other
-    /// end. The primitive integer types all implement a [`rotate_right`](Self::rotate_right) function,
-    /// which may be what you want instead.
+    /// Note that this is *not* the same as a rotate-right; the RHS of a
+    /// wrapping shift-right is restricted to the range of the type, rather than
+    /// the bits shifted out of the LHS being returned to the other end. The
+    /// primitive integer types all implement a
+    /// [`rotate_right`](Self::rotate_right) function, which may be what you
+    /// want instead.
     ///
     /// # Examples
     ///
@@ -1141,12 +1157,13 @@ impl I256 {
         unsafe { result.assume_init() }
     }
 
-    /// Wrapping (modular) absolute value. Computes `self.abs()`, wrapping around at
-    /// the boundary of the type.
+    /// Wrapping (modular) absolute value. Computes `self.abs()`, wrapping
+    /// around at the boundary of the type.
     ///
-    /// The only case where such wrapping can occur is when one takes the absolute value of the negative
-    /// minimal value for the type; this is a positive value that is too large to represent in the type. In
-    /// such a case, this function returns `MIN` itself.
+    /// The only case where such wrapping can occur is when one takes the
+    /// absolute value of the negative minimal value for the type; this is a
+    /// positive value that is too large to represent in the type. In such a
+    /// case, this function returns `MIN` itself.
     ///
     /// # Examples
     ///
@@ -1240,8 +1257,9 @@ impl I256 {
 
     /// Calculates `self` + `rhs`
     ///
-    /// Returns a tuple of the addition along with a boolean indicating whether an arithmetic overflow would
-    /// occur. If an overflow would have occurred then the wrapped value is returned.
+    /// Returns a tuple of the addition along with a boolean indicating whether
+    /// an arithmetic overflow would occur. If an overflow would have occurred
+    /// then the wrapped value is returned.
     ///
     /// # Examples
     ///
@@ -1263,8 +1281,9 @@ impl I256 {
 
     /// Calculates `self` - `rhs`
     ///
-    /// Returns a tuple of the subtraction along with a boolean indicating whether an arithmetic overflow
-    /// would occur. If an overflow would have occurred then the wrapped value is returned.
+    /// Returns a tuple of the subtraction along with a boolean indicating
+    /// whether an arithmetic overflow would occur. If an overflow would have
+    /// occurred then the wrapped value is returned.
     ///
     /// # Examples
     ///
@@ -1286,8 +1305,9 @@ impl I256 {
 
     /// Calculates the multiplication of `self` and `rhs`.
     ///
-    /// Returns a tuple of the multiplication along with a boolean indicating whether an arithmetic overflow
-    /// would occur. If an overflow would have occurred then the wrapped value is returned.
+    /// Returns a tuple of the multiplication along with a boolean indicating
+    /// whether an arithmetic overflow would occur. If an overflow would have
+    /// occurred then the wrapped value is returned.
     ///
     /// # Examples
     ///
@@ -1309,8 +1329,9 @@ impl I256 {
 
     /// Calculates the divisor when `self` is divided by `rhs`.
     ///
-    /// Returns a tuple of the divisor along with a boolean indicating whether an arithmetic overflow would
-    /// occur. If an overflow would occur then self is returned.
+    /// Returns a tuple of the divisor along with a boolean indicating whether
+    /// an arithmetic overflow would occur. If an overflow would occur then self
+    /// is returned.
     ///
     /// # Panics
     ///
@@ -1338,8 +1359,9 @@ impl I256 {
 
     /// Calculates the quotient of Euclidean division `self.div_euclid(rhs)`.
     ///
-    /// Returns a tuple of the divisor along with a boolean indicating whether an arithmetic overflow would
-    /// occur. If an overflow would occur then `self` is returned.
+    /// Returns a tuple of the divisor along with a boolean indicating whether
+    /// an arithmetic overflow would occur. If an overflow would occur then
+    /// `self` is returned.
     ///
     /// # Panics
     ///
@@ -1367,8 +1389,9 @@ impl I256 {
 
     /// Calculates the remainder when `self` is divided by `rhs`.
     ///
-    /// Returns a tuple of the remainder after dividing along with a boolean indicating whether an
-    /// arithmetic overflow would occur. If an overflow would occur then 0 is returned.
+    /// Returns a tuple of the remainder after dividing along with a boolean
+    /// indicating whether an arithmetic overflow would occur. If an overflow
+    /// would occur then 0 is returned.
     ///
     /// # Panics
     ///
@@ -1396,8 +1419,9 @@ impl I256 {
 
     /// Overflowing Euclidean remainder. Calculates `self.rem_euclid(rhs)`.
     ///
-    /// Returns a tuple of the remainder after dividing along with a boolean indicating whether an
-    /// arithmetic overflow would occur. If an overflow would occur then 0 is returned.
+    /// Returns a tuple of the remainder after dividing along with a boolean
+    /// indicating whether an arithmetic overflow would occur. If an overflow
+    /// would occur then 0 is returned.
     ///
     /// # Panics
     ///
@@ -1425,9 +1449,10 @@ impl I256 {
 
     /// Negates self, overflowing if this is equal to the minimum value.
     ///
-    /// Returns a tuple of the negated version of self along with a boolean indicating whether an overflow
-    /// happened. If `self` is the minimum value (e.g., `i32::MIN` for values of type `i32`), then the
-    /// minimum value will be returned again and `true` will be returned for an overflow happening.
+    /// Returns a tuple of the negated version of self along with a boolean
+    /// indicating whether an overflow happened. If `self` is the minimum value
+    /// (e.g., `i32::MIN` for values of type `i32`), then the minimum value will
+    /// be returned again and `true` will be returned for an overflow happening.
     ///
     /// # Examples
     ///
@@ -1449,9 +1474,11 @@ impl I256 {
 
     /// Shifts self left by `rhs` bits.
     ///
-    /// Returns a tuple of the shifted version of self along with a boolean indicating whether the shift
-    /// value was larger than or equal to the number of bits. If the shift value is too large, then value is
-    /// masked (N-1) where N is the number of bits, and this value is then used to perform the shift.
+    /// Returns a tuple of the shifted version of self along with a boolean
+    /// indicating whether the shift value was larger than or equal to the
+    /// number of bits. If the shift value is too large, then value is masked
+    /// (N-1) where N is the number of bits, and this value is then used to
+    /// perform the shift.
     ///
     /// # Examples
     ///
@@ -1471,9 +1498,11 @@ impl I256 {
 
     /// Shifts self right by `rhs` bits.
     ///
-    /// Returns a tuple of the shifted version of self along with a boolean indicating whether the shift
-    /// value was larger than or equal to the number of bits. If the shift value is too large, then value is
-    /// masked (N-1) where N is the number of bits, and this value is then used to perform the shift.
+    /// Returns a tuple of the shifted version of self along with a boolean
+    /// indicating whether the shift value was larger than or equal to the
+    /// number of bits. If the shift value is too large, then value is masked
+    /// (N-1) where N is the number of bits, and this value is then used to
+    /// perform the shift.
     ///
     /// # Examples
     ///
@@ -1493,11 +1522,10 @@ impl I256 {
 
     /// Computes the absolute value of `self`.
     ///
-    /// Returns a tuple of the absolute version of self along with a boolean indicating whether an overflow
-    /// happened. If self is the minimum value
-    /// (e.g., I256::MIN for values of type I256),
-    /// then the minimum value will be returned again and true will be returned
-    /// for an overflow happening.
+    /// Returns a tuple of the absolute version of self along with a boolean
+    /// indicating whether an overflow happened. If self is the minimum value
+    /// (e.g., I256::MIN for values of type I256), then the minimum value will
+    /// be returned again and true will be returned for an overflow happening.
     ///
     /// # Examples
     ///
@@ -1614,12 +1642,13 @@ impl I256 {
     ///
     /// In other words, the result is `self / rhs` rounded to the integer `q`
     /// such that `self >= q * rhs`.
-    /// If `self > 0`, this is equal to round towards zero (the default in Rust);
-    /// if `self < 0`, this is equal to round towards +/- infinity.
+    /// If `self > 0`, this is equal to round towards zero (the default in
+    /// Rust); if `self < 0`, this is equal to round towards +/- infinity.
     ///
     /// # Panics
     ///
-    /// This function will panic if `rhs` is 0 or the division results in overflow.
+    /// This function will panic if `rhs` is 0 or the division results in
+    /// overflow.
     ///
     /// # Examples
     ///
@@ -1654,7 +1683,8 @@ impl I256 {
     ///
     /// # Panics
     ///
-    /// This function will panic if `rhs` is 0 or the division results in overflow.
+    /// This function will panic if `rhs` is 0 or the division results in
+    /// overflow.
     ///
     /// # Examples
     ///
@@ -1762,8 +1792,8 @@ impl I256 {
         hi.signum() | (lo != 0) as i128
     }
 
-    /// Returns `true` if `self` is positive and `false` if the number is zero or
-    /// negative.
+    /// Returns `true` if `self` is positive and `false` if the number is zero
+    /// or negative.
     ///
     /// # Examples
     ///
@@ -1779,8 +1809,8 @@ impl I256 {
         self.signum128() > 0
     }
 
-    /// Returns `true` if `self` is negative and `false` if the number is zero or
-    /// positive.
+    /// Returns `true` if `self` is negative and `false` if the number is zero
+    /// or positive.
     ///
     /// # Examples
     ///
@@ -1904,7 +1934,8 @@ impl I256 {
     /// );
     /// ```
     ///
-    /// When starting from a slice rather than an array, fallible conversion APIs can be used:
+    /// When starting from a slice rather than an array, fallible conversion
+    /// APIs can be used:
     ///
     /// ```
     /// # use ethnum::I256;
@@ -1939,7 +1970,8 @@ impl I256 {
     /// );
     /// ```
     ///
-    /// When starting from a slice rather than an array, fallible conversion APIs can be used:
+    /// When starting from a slice rather than an array, fallible conversion
+    /// APIs can be used:
     ///
     /// ```
     /// # use ethnum::I256;
@@ -1988,7 +2020,8 @@ impl I256 {
     /// );
     /// ```
     ///
-    /// When starting from a slice rather than an array, fallible conversion APIs can be used:
+    /// When starting from a slice rather than an array, fallible conversion
+    /// APIs can be used:
     ///
     /// ```
     /// # use ethnum::I256;
