@@ -4,9 +4,16 @@ macro_rules! impl_cmp {
     (
         impl Cmp for $int:ident ($prim:ident);
     ) => {
+        impl Ord for $int {
+            #[inline]
+            fn cmp(&self, other: &Self) -> ::core::cmp::Ordering {
+                self.into_words().cmp(&other.into_words())
+            }
+        }
+
         impl PartialOrd for $int {
             #[inline]
-            fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+            fn partial_cmp(&self, other: &Self) -> Option<::core::cmp::Ordering> {
                 Some(self.cmp(other))
             }
         }
@@ -27,14 +34,14 @@ macro_rules! impl_cmp {
 
         impl PartialOrd<$prim> for $int {
             #[inline]
-            fn partial_cmp(&self, rhs: &$prim) -> Option<Ordering> {
+            fn partial_cmp(&self, rhs: &$prim) -> Option<::core::cmp::Ordering> {
                 Some(self.cmp(&$int::new(*rhs)))
             }
         }
 
         impl PartialOrd<$int> for $prim {
             #[inline]
-            fn partial_cmp(&self, rhs: &$int) -> Option<Ordering> {
+            fn partial_cmp(&self, rhs: &$int) -> Option<::core::cmp::Ordering> {
                 Some($int::new(*self).cmp(rhs))
             }
         }

@@ -1026,7 +1026,7 @@ impl I256 {
     /// the boundary of the type.
     ///
     /// Such wrap-around never actually occurs mathematically; implementation
-    /// artifacts make `x % y` invalid for `MIN / -1` on a signed type (where 
+    /// artifacts make `x % y` invalid for `MIN / -1` on a signed type (where
     /// MIN` is the negative minimal value). In such a case, this function
     /// returns `0`.
     ///
@@ -2037,3 +2037,15 @@ impl I256 {
         unsafe { mem::transmute(bytes) }
     }
 }
+/*
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn doc() {
+        assert_eq!(I256::new(100).wrapping_add(I256::new(27)), 127);
+        assert_eq!(I256::MAX.wrapping_add(I256::new(2)), I256::MIN + 1);
+    }
+}
+*/

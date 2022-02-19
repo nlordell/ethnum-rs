@@ -11,14 +11,6 @@
 //! ```
 
 use crate::uint::U256;
-use core::cmp::Ordering;
-
-impl Ord for U256 {
-    #[inline]
-    fn cmp(&self, other: &Self) -> Ordering {
-        self.into_words().cmp(&other.into_words())
-    }
-}
 
 impl_cmp! {
     impl Cmp for U256 (u128);
@@ -27,6 +19,7 @@ impl_cmp! {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use core::cmp::Ordering;
 
     #[test]
     fn cmp() {

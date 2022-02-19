@@ -12,25 +12,6 @@
 //! ```
 
 use super::I256;
-use core::cmp::Ordering;
-
-impl Ord for I256 {
-    #[inline]
-    fn cmp(&self, other: &Self) -> Ordering {
-        match self.high().cmp(other.high()) {
-            Ordering::Less => Ordering::Less,
-            Ordering::Equal => {
-                let (a, b) = if *self.high() >= 0 {
-                    (self, other)
-                } else {
-                    (other, self)
-                };
-                (*a.low() as u128).cmp(&(*b.low() as u128))
-            }
-            Ordering::Greater => Ordering::Greater,
-        }
-    }
-}
 
 impl_cmp! {
     impl Cmp for I256 (i128);
@@ -39,6 +20,7 @@ impl_cmp! {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use core::cmp::Ordering;
 
     #[test]
     fn cmp() {
