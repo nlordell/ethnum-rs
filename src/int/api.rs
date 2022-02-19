@@ -623,7 +623,7 @@ impl I256 {
     /// ```
     /// # use ethnum::I256;
     /// assert_eq!(I256::new(0x1).checked_shl(4), Some(I256::new(0x10)));
-    /// assert_eq!(I256::new(0x1).checked_shl(129), None);
+    /// assert_eq!(I256::new(0x1).checked_shl(257), None);
     /// ```
     #[must_use = "this returns the result of the operation, \
                   without modifying the original"]
@@ -647,7 +647,7 @@ impl I256 {
     /// ```
     /// # use ethnum::I256;
     /// assert_eq!(I256::new(0x10).checked_shr(4), Some(I256::new(0x1)));
-    /// assert_eq!(I256::new(0x10).checked_shr(128), None);
+    /// assert_eq!(I256::new(0x10).checked_shr(256), None);
     /// ```
     #[must_use = "this returns the result of the operation, \
                   without modifying the original"]
@@ -985,7 +985,7 @@ impl I256 {
     /// ```
     /// # use ethnum::I256;
     /// assert_eq!(I256::new(100).wrapping_div(I256::new(10)), 10);
-    /// assert_eq!(I256::MIN.wrapping_div(I256::new(-1)), -128);
+    /// assert_eq!(I256::MIN.wrapping_div(I256::new(-1)), I256::MIN);
     /// ```
     #[must_use = "this returns the result of the operation, \
                   without modifying the original"]
@@ -1013,7 +1013,7 @@ impl I256 {
     /// ```
     /// # use ethnum::I256;
     /// assert_eq!(I256::new(100).wrapping_div_euclid(I256::new(10)), 10);
-    /// assert_eq!(I256::MIN.wrapping_div_euclid(I256::new(-1)), -128);
+    /// assert_eq!(I256::MIN.wrapping_div_euclid(I256::new(-1)), I256::MIN);
     /// ```
     #[must_use = "this returns the result of the operation, \
                   without modifying the original"]
