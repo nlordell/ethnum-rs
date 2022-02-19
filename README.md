@@ -61,6 +61,23 @@ in order to actually take advantage of the the optimized assembly:
 RUSTFLAGS="-Clinker-plugin-lto -Clinker=clang -Clink-arg=-fuse-ld=lld" cargo build
 ```
 
+### API Stability
+
+The instinsics are exported under `ethnum::intrinsics`. That being said, be
+careful when using these intrinsics directly. Semantic versioning API
+compatibility is **not guaranteed** for any of these intrinsics.
+
+If you do you use these in your projects, it is recommended to use strict
+versioning:
+
+```toml
+[dependencies]
+ethnum = "=x.y.z"
+```
+
+This will ensure commands like `cargo update` won't change the version of the
+`ethnum` dependency.
+
 ## Benchmarking
 
 The `ethnum-bench` crate implements `criterion` benchmarks for performance of
