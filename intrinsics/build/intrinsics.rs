@@ -44,6 +44,11 @@ def! {
         r.write(res);
         carry
     }
+    pub unsafe fn iaddc(r: &mut MaybeUninit<i128>, a: &i128, b: &i128) -> bool {
+        let (res, carry) = a.overflowing_add(*b);
+        r.write(res);
+        carry
+    }
 
     pub unsafe fn sub2(r: &mut u128, a: &u128) {
         *r -= *a;
@@ -57,11 +62,16 @@ def! {
         r.write(res);
         carry
     }
+    pub unsafe fn isubc(r: &mut MaybeUninit<i128>, a: &i128, b: &i128) -> bool {
+        let (res, carry) = a.overflowing_sub(*b);
+        r.write(res);
+        carry
+    }
 
-    pub unsafe fn umul2(r: &mut u128, a: &u128) {
+    pub unsafe fn mul2(r: &mut u128, a: &u128) {
         *r *= *a;
     }
-    pub unsafe fn umul3(r: &mut MaybeUninit<u128>, a: &u128, b: &u128) {
+    pub unsafe fn mul3(r: &mut MaybeUninit<u128>, a: &u128, b: &u128) {
         let res = a.wrapping_mul(*b);
         r.write(res);
     }
@@ -71,26 +81,33 @@ def! {
         carry
     }
 
-    pub unsafe fn ashl2(r: &mut u128, a: u32) {
+    pub unsafe fn shl2(r: &mut u128, a: u32) {
         *r <<= a;
     }
-    pub unsafe fn ashl3(r: &mut MaybeUninit<u128>, a: &u128, b: u32) {
+    pub unsafe fn shl3(r: &mut MaybeUninit<u128>, a: &u128, b: u32) {
         let res = a.wrapping_shl(b);
         r.write(res);
     }
 
-    pub unsafe fn lshr2(r: &mut u128, a: u32) {
+    pub unsafe fn sar2(r: &mut i128, a: u32) {
         *r >>= a;
     }
-    pub unsafe fn lshr3(r: &mut MaybeUninit<u128>, a: &u128, b: u32) {
+    pub unsafe fn sar3(r: &mut MaybeUninit<i128>, a: &i128, b: u32) {
+        let res = a.wrapping_shr(b);
+        r.write(res);
+    }
+    pub unsafe fn shr2(r: &mut u128, a: u32) {
+        *r >>= a;
+    }
+    pub unsafe fn shr3(r: &mut MaybeUninit<u128>, a: &u128, b: u32) {
         let res = a.wrapping_shr(b);
         r.write(res);
     }
 
-    pub unsafe fn rotate_left(r: &mut MaybeUninit<u128>, a: &u128, b: u32) {
+    pub unsafe fn rol3(r: &mut MaybeUninit<u128>, a: &u128, b: u32) {
         r.write(a.rotate_left(b));
     }
-    pub unsafe fn rotate_right(r: &mut MaybeUninit<u128>, a: &u128, b: u32) {
+    pub unsafe fn ror3(r: &mut MaybeUninit<u128>, a: &u128, b: u32) {
         r.write(a.rotate_right(b));
     }
 

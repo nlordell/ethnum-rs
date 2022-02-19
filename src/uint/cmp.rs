@@ -5,48 +5,20 @@
 //!
 //! ```
 //! # use ethnum::U256;
+//!
 //! assert_eq!(U256::new(42), 42);
 //! assert!(U256::ONE > 0 && U256::ZERO == 0);
 //! ```
 
-use crate::U256;
-use core::cmp::Ordering;
+use crate::uint::U256;
 
-impl Ord for U256 {
-    #[inline]
-    fn cmp(&self, other: &Self) -> Ordering {
-        self.into_words().cmp(&other.into_words())
-    }
-}
-
-impl PartialOrd for U256 {
-    #[inline]
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Some(self.cmp(other))
-    }
-}
-
-impl PartialEq<u128> for U256 {
-    #[inline]
-    fn eq(&self, other: &u128) -> bool {
-        *self.high() == 0 && self.low() == other
-    }
-}
-
-impl PartialOrd<u128> for U256 {
-    #[inline]
-    fn partial_cmp(&self, rhs: &u128) -> Option<Ordering> {
-        Some(if *self.high() == 0 {
-            self.low().cmp(rhs)
-        } else {
-            Ordering::Greater
-        })
-    }
+impl_cmp! {
+    impl Cmp for U256 (u128);
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::U256;
+    use super::*;
     use core::cmp::Ordering;
 
     #[test]

@@ -7,7 +7,7 @@
 //! This source is ported from LLVM project from C:
 //! https://github.com/llvm/llvm-project/blob/master/compiler-rt/lib/builtins/multi3.c
 
-use crate::U256;
+use crate::{int::I256, uint::U256};
 use core::mem::MaybeUninit;
 
 #[inline]
@@ -35,16 +35,16 @@ pub fn umulddi3(a: &u128, b: &u128) -> U256 {
 }
 
 #[inline]
-pub fn umul2(r: &mut U256, a: &U256) {
+pub fn mul2(r: &mut U256, a: &U256) {
     let (a, b) = (*r, a);
     // SAFETY: `multi3` does not write `MaybeUninit::uninit()` to `res` and
     // `U256` does not implement `Drop`.
     let res = unsafe { &mut *(r as *mut U256).cast() };
-    umul3(res, &a, b);
+    mul3(res, &a, b);
 }
 
 #[inline]
-pub fn umul3(res: &mut MaybeUninit<U256>, a: &U256, b: &U256) {
+pub fn mul3(res: &mut MaybeUninit<U256>, a: &U256, b: &U256) {
     let mut r = umulddi3(a.low(), b.low());
 
     let hi_lo = a.high().wrapping_mul(*b.low());
@@ -66,6 +66,29 @@ pub fn umulc(r: &mut MaybeUninit<U256>, a: &U256, b: &U256) -> bool {
 
     r.write(res);
     overflow_hi_lo | overflow_lo_hi | overflow_hi | overflow_high
+}
+
+#[inline]
+pub fn imulc(res: &mut MaybeUninit<I256>, a: &I256, b: &I256) -> bool {
+    mul3(cast!(uninit: res), cast!(ref: a), cast!(ref: b));
+    if *a == I256::MIN {
+        return *b != 0 && *b != 1;
+    }
+    if *b == I256::MIN {
+        return *a != 0 && *a != 1;
+    }
+    let sa = a >> (I256::BITS - 1);
+    let abs_a = (a ^ sa).wrapping_sub(sa);
+    let sb = b >> (I256::BITS - 1);
+    let abs_b = (b ^ sb).wrapping_sub(sb);
+    if abs_a < 2 || abs_b < 2 {
+        return false;
+    }
+    if sa == sb {
+        abs_a > I256::MAX / abs_b
+    } else {
+        abs_a > I256::MIN / -abs_b
+    }
 }
 
 #[cfg(test)]

@@ -5,9 +5,9 @@ mod add;
 mod ctz;
 mod divmod;
 mod mul;
-mod rotate;
+mod rot;
 mod shl;
 mod shr;
 mod sub;
 
-pub use self::{add::*, ctz::*, divmod::*, mul::*, rotate::*, shl::*, shr::*, sub::*};
+pub use self::{add::*, ctz::*, divmod::*, mul::*, rot::*, shl::*, shr::*, sub::*};
