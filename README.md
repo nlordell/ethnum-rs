@@ -87,3 +87,24 @@ unsigned integer intrinsics:
 cargo bench -p ethnum-bench
 RUSTFLAGS="-Clinker-plugin-lto -Clinker=clang -Clink-arg=-fuse-ld=lld" cargo bench -p ethnum-bench --features llvm-intrinsics
 ```
+
+## Fuzzing
+
+The `ethnum-fuzz` crate implements an AFL fuzzing target (as well as some
+utilities for working with `cargo afl`). Internally, it converts the signed
+256-bit integer types to `num::BigInt` and uses its operation implementations
+as a reference.
+
+In order to start fuzzing:
+
+```sh
+cargo install afl
+cargo run -p ethnum-fuzz --bin init target/fuzz
+cargo afl build -p ethnum-fuzz --bin fuzz
+cargo afl fuzz -i target/fuzz/in -o target/fuzz/out target/debug/fuzz
+```
+
+In order to replay crashes:
+```sh
+cargo run -p ethnum-fuzz --bin dump target/fuzz/out/default/crashes/FILE
+```
