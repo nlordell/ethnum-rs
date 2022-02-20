@@ -2,7 +2,7 @@
 name = "ethnum-bench"
 version = "0.0.0"
 publish = false
-edition = "2018"
+edition = "2021"
 
 [[bench]]
 name = "num"

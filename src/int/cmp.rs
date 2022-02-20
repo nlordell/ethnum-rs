@@ -12,6 +12,16 @@
 //! ```
 
 use super::I256;
+use core::cmp::Ordering;
+
+impl Ord for I256 {
+    #[inline]
+    fn cmp(&self, other: &Self) -> Ordering {
+        let (ahi, alo) = self.into_words();
+        let (bhi, blo) = other.into_words();
+        (ahi, alo as u128).cmp(&(bhi, blo as u128))
+    }
+}
 
 impl_cmp! {
     impl Cmp for I256 (i128);
@@ -37,6 +47,9 @@ mod tests {
         let y = I256::new(100);
         assert!(x <= y);
         assert_eq!(x.cmp(&y), Ordering::Equal);
+
+        assert!(I256::ZERO > I256::MIN);
+        assert!(I256::ZERO < I256::MAX);
 
         assert!(I256::MAX > I256::MIN);
         assert!(I256::MIN < I256::MAX);

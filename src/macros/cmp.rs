@@ -4,13 +4,6 @@ macro_rules! impl_cmp {
     (
         impl Cmp for $int:ident ($prim:ident);
     ) => {
-        impl Ord for $int {
-            #[inline]
-            fn cmp(&self, other: &Self) -> ::core::cmp::Ordering {
-                self.into_words().cmp(&other.into_words())
-            }
-        }
-
         impl PartialOrd for $int {
             #[inline]
             fn partial_cmp(&self, other: &Self) -> Option<::core::cmp::Ordering> {

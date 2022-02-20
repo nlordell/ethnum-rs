@@ -29,3 +29,9 @@ pub mod intrinsics;
 mod uint;
 
 pub use self::{int::*, uint::*};
+
+/// Convenience re-export of 256-integer types and as- conversion traits.
+pub mod prelude {
+    pub use crate::int::{AsI256, I256};
+    pub use crate::uint::{AsU256, U256};
+}

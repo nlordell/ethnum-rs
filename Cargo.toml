@@ -15,6 +15,7 @@ categories = ["cryptography::cryptocurrencies", "mathematics", "no-std"]
 [workspace]
 members = [
   "bench",
+  "fuzz",
   "intrinsics",
 ]
 
