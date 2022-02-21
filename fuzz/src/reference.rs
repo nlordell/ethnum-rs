@@ -22,4 +22,20 @@ impl_ref! {
     pub fn overflowing_add(a: Int, b: Int) -> (Int, bool) {
         a + b
     }
+
+    pub fn overflowing_sub(a: Int, b: Int) -> (Int, bool) {
+        a - b
+    }
+
+    pub fn overflowing_mul(a: Int, b: Int) -> (Int, bool) {
+        a * b
+    }
+
+    pub fn overflowing_div(a: Int, b: Int) -> (Int, bool) {
+        a / b
+    }
+
+    pub fn overflowing_rem(a: Int, b: Int) -> (Int, bool) {
+        a % b
+    }
 }

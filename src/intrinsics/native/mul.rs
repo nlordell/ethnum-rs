@@ -64,8 +64,10 @@ pub fn umulc(r: &mut MaybeUninit<U256>, a: &U256, b: &U256) -> bool {
     let (high, overflow_high) = res.high().overflowing_add(hi);
     *res.high_mut() = high;
 
+    let overflow_hi_hi = (*a.high() != 0) & (*b.high() != 0);
+
     r.write(res);
-    overflow_hi_lo | overflow_lo_hi | overflow_hi | overflow_high
+    overflow_hi_lo | overflow_lo_hi | overflow_hi | overflow_high | overflow_hi_hi
 }
 
 #[inline]

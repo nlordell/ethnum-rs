@@ -22,10 +22,20 @@ impl Target {
 #[derive(Arbitrary, Debug)]
 pub enum Op {
     Add(Num, Num),
+    Sub(Num, Num),
+    Mul(Num, Num),
+    Div(Num, Num),
+    Rem(Num, Num),
 }
 
 #[derive(Arbitrary, Debug)]
 pub struct Num(u128, u128);
+
+impl Num {
+    fn is_zero(&self) -> bool {
+        self.0 == 0 && self.1 == 0
+    }
+}
 
 impl AsU256 for Num {
     fn as_u256(self) -> ethnum::U256 {
@@ -43,6 +53,18 @@ macro_rules! ops {
     ($op:expr, $as:ident) => {{
         match $op {
             Op::Add(a, b) => assert_op!(a, b, $as, overflowing_add),
+            Op::Sub(a, b) => assert_op!(a, b, $as, overflowing_sub),
+            Op::Mul(a, b) => assert_op!(a, b, $as, overflowing_mul),
+            Op::Div(a, b) => {
+                if !b.is_zero() {
+                    assert_op!(a, b, $as, overflowing_div)
+                }
+            }
+            Op::Rem(a, b) => {
+                if !b.is_zero() {
+                    assert_op!(a, b, $as, overflowing_rem)
+                }
+            }
         }
     }};
 }
