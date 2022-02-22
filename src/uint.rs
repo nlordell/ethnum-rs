@@ -15,10 +15,6 @@ use crate::I256;
 #[repr(transparent)]
 pub struct U256(pub [u128; 2]);
 
-/// A 256-bit unsigned integer type.
-#[allow(non_camel_case_types)]
-pub type u256 = U256;
-
 impl U256 {
     /// The additive identity for this integer type, i.e. `0`.
     pub const ZERO: Self = U256([0; 2]);

@@ -28,10 +28,18 @@ mod int;
 pub mod intrinsics;
 mod uint;
 
-pub use self::{int::*, uint::*};
-
 /// Convenience re-export of 256-integer types and as- conversion traits.
 pub mod prelude {
     pub use crate::int::{AsI256, I256};
     pub use crate::uint::{AsU256, U256};
 }
+
+pub use self::prelude::*;
+
+/// A 256-bit signed integer type.
+#[allow(non_camel_case_types)]
+pub type i256 = I256;
+
+/// A 256-bit unsigned integer type.
+#[allow(non_camel_case_types)]
+pub type u256 = U256;

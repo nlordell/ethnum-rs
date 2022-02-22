@@ -10,14 +10,10 @@ mod ops;
 pub use self::convert::AsI256;
 use crate::uint::U256;
 
-/// A 256-bit unsigned integer type.
+/// A 256-bit signed integer type.
 #[derive(Clone, Copy, Default, Eq, Hash, PartialEq)]
 #[repr(transparent)]
 pub struct I256(pub [i128; 2]);
-
-/// A 256-bit unsigned integer type.
-#[allow(non_camel_case_types)]
-pub type i256 = I256;
 
 impl I256 {
     /// The additive identity for this integer type, i.e. `0`.
