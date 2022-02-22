@@ -1,4 +1,4 @@
-//! This crate contains LLVM generated intrinsics for 256-bit unsigned integer
+//! This crate contains LLVM generated intrinsics for 256-bit integer
 //! operations.
 
 #![no_std]

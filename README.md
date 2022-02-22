@@ -1,9 +1,8 @@
 # `ethnum`
 
-This crate provides implementations for a 256-bit signed and unsigned integer,
-the primitive integer type in Ethereum. This implementation is meant to be as
-close as possible to Rust integer primitives, implementing the same methods and
-traits.
+This crate provides implementations for 256-bit integers, the primitive integer
+type in Ethereum. This implementation is meant to be as close as possible to
+Rust integer primitives, implementing the same methods and traits.
 
 ## Usage
 
@@ -81,7 +80,7 @@ This will ensure commands like `cargo update` won't change the version of the
 ## Benchmarking
 
 The `ethnum-bench` crate implements `criterion` benchmarks for performance of
-unsigned integer intrinsics:
+integer intrinsics:
 
 ```sh
 cargo bench -p ethnum-bench

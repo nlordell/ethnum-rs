@@ -59,7 +59,7 @@ impl I256 {
         }
     }
 
-    /// Get the low 128-bit word for this unsigned integer.
+    /// Get the low 128-bit word for this signed integer.
     #[inline]
     pub fn low(&self) -> &i128 {
         #[cfg(target_endian = "little")]
@@ -72,8 +72,7 @@ impl I256 {
         }
     }
 
-    /// Get the low 128-bit word for this unsigned integer as a mutable
-    /// reference.
+    /// Get the low 128-bit word for this signed integer as a mutable reference.
     #[inline]
     pub fn low_mut(&mut self) -> &mut i128 {
         #[cfg(target_endian = "little")]
@@ -86,7 +85,7 @@ impl I256 {
         }
     }
 
-    /// Get the high 128-bit word for this unsigned integer.
+    /// Get the high 128-bit word for this signed integer.
     #[inline]
     pub fn high(&self) -> &i128 {
         #[cfg(target_endian = "little")]
@@ -99,7 +98,7 @@ impl I256 {
         }
     }
 
-    /// Get the high 128-bit word for this unsigned integer as a mutable
+    /// Get the high 128-bit word for this signed integer as a mutable
     /// reference.
     #[inline]
     pub fn high_mut(&mut self) -> &mut i128 {

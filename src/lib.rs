@@ -1,4 +1,4 @@
-//! This crate implements a 256-bit unsigned integer type.
+//! This crate implements 256-bit integer types.
 //!
 //! The implementation tries to follow as closely as possible to primitive
 //! integer types, and should implement all the common methods and traits as the
