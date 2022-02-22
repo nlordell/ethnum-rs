@@ -1,9 +1,9 @@
 # `ethnum`
 
-This crate provides an implementation for a 256-bit unsigned integer, the
-primitive integer type in Ethereum. This implementation is meant to be as close
-as possible to Rust unsigned integer primitives, implementing the same methods
-and traits.
+This crate provides implementations for a 256-bit signed and unsigned integer,
+the primitive integer type in Ethereum. This implementation is meant to be as
+close as possible to Rust integer primitives, implementing the same methods and
+traits.
 
 ## Usage
 
@@ -13,11 +13,11 @@ Add this to your `Cargo.toml`:
 ethnum = "1"
 ```
 
-The API follows the Rust `uN` primitive types as close as possible.
+The API follows the Rust `{i,u}N` primitive types as close as possible.
 
 ## Intrinsics
 
-The 256-bit integer uses intrinsics based on two implementations:
+The 256-bit integers uses intrinsics based on two implementations:
 
 ### Native Rust Implementation
 
