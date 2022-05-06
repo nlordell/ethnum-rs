@@ -112,7 +112,7 @@ pub mod decimal {
     }
 }
 
-/// Module for use with `#[serde(with = "ethnum::serde::prexied")]` to specify
+/// Module for use with `#[serde(with = "ethnum::serde::prefixed")]` to specify
 /// prefixed string serialization for 256-bit integer types.
 ///
 /// This allows serialization to look for an optional `0x` prefix to determine

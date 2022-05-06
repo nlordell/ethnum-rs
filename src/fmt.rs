@@ -3,7 +3,8 @@
 //!
 //! Most of these implementations were ported from the Rust standard library's
 //! implementation for primitive integer types:
-//! https://doc.rust-lang.org/src/core/fmt/num.rs.html
+//! <https://doc.rust-lang.org/src/core/num/mod.rs.html>
+//! <https://doc.rust-lang.org/src/core/fmt/num.rs.html>
 
 use crate::uint::U256;
 use core::{

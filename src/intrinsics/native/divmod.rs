@@ -6,8 +6,8 @@
 //! 256-bit division.
 //!
 //! This source is ported from LLVM project from C:
-//! - signed division: https://github.com/llvm/llvm-project/blob/main/compiler-rt/lib/builtins/divmodti4.c
-//! - unsigned division: https://github.com/llvm/llvm-project/blob/main/compiler-rt/lib/builtins/udivmodti4.c
+//! - signed division: <https://github.com/llvm/llvm-project/blob/main/compiler-rt/lib/builtins/divmodti4.c>
+//! - unsigned division: <https://github.com/llvm/llvm-project/blob/main/compiler-rt/lib/builtins/udivmodti4.c>
 
 use crate::{int::I256, uint::U256};
 use core::mem::MaybeUninit;

@@ -12,6 +12,9 @@ license = "MIT OR Apache-2.0"
 keywords = ["integer", "u256", "ethereum"]
 categories = ["cryptography::cryptocurrencies", "mathematics", "no-std"]
 
+[package.metadata.docs.rs]
+features = ["serde"]
+
 [workspace]
 members = [
   "bench",

@@ -5,7 +5,7 @@
 //! information in order to implement 256-bit overflowing multiplication.
 //!
 //! This source is ported from LLVM project from C:
-//! https://github.com/llvm/llvm-project/blob/master/compiler-rt/lib/builtins/multi3.c
+//! <https://github.com/llvm/llvm-project/blob/master/compiler-rt/lib/builtins/multi3.c>
 
 use crate::{int::I256, uint::U256};
 use core::mem::MaybeUninit;
