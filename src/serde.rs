@@ -10,10 +10,11 @@
 //!
 //! TODO(nlordell): example!
 
-use crate::{fmt::FormatBuffer, I256, U256};
+use crate::{int::I256, uint::U256};
 use core::{
     fmt::{self, Display, Formatter, Write},
-    str,
+    mem::MaybeUninit,
+    ptr, slice, str,
 };
 use serde::{
     de::{self, Visitor},
@@ -188,10 +189,84 @@ where
     }
 }
 
+/// A stack-allocated buffer that can be used for writing formatted strings.
+///
+/// This allows us to leverage existing `fmt` implementations on integer types
+/// without requiring heap allocations (i.e. writing to a `String` buffer).
+struct FormatBuffer<const N: usize> {
+    offset: usize,
+    buffer: [MaybeUninit<u8>; N],
+}
+
+impl<const N: usize> FormatBuffer<N> {
+    /// Creates a new formatting buffer.
+    fn new() -> Self {
+        Self {
+            offset: 0,
+            buffer: [MaybeUninit::uninit(); N],
+        }
+    }
+
+    /// Returns a `str` to the currently written data.
+    fn as_str(&self) -> &str {
+        // SAFETY: We only ever write valid UTF-8 strings to the buffer, so the
+        // resulting string will always be valid.
+        unsafe {
+            let buffer = slice::from_raw_parts(self.buffer[0].as_ptr(), self.offset);
+            str::from_utf8_unchecked(buffer)
+        }
+    }
+}
+
+impl FormatBuffer<78> {
+    /// Allocates a formatting buffer large enough to hold any possible decimal
+    /// encoded 256-bit value.
+    fn decimal() -> Self {
+        Self::new()
+    }
+}
+
+impl FormatBuffer<67> {
+    /// Allocates a formatting buffer large enough to hold any possible
+    /// hexadecimal encoded 256-bit value.
+    fn hex() -> Self {
+        Self::new()
+    }
+}
+
+impl<const N: usize> Write for FormatBuffer<N> {
+    fn write_str(&mut self, s: &str) -> fmt::Result {
+        let end = self.offset.checked_add(s.len()).ok_or(fmt::Error)?;
+
+        // Make sure there is enough space in the buffer.
+        if end > N {
+            return Err(fmt::Error);
+        }
+
+        // SAFETY: We checked that there is enough space in the buffer to fit
+        // the string `s` starting from `offset`, and the pointers cannot be
+        // overlapping because of Rust ownership semantics (i.e. `s` cannot
+        // overlap with `buffer` because we have a mutable reference to `self`
+        // and by extension `buffer`).
+        unsafe {
+            let buffer = self.buffer[0].as_mut_ptr().add(self.offset);
+            ptr::copy_nonoverlapping(s.as_ptr(), buffer, s.len());
+        }
+        self.offset = end;
+
+        Ok(())
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
-    use alloc::string::String;
+    use alloc::{
+        boxed::Box,
+        fmt::{Display, LowerHex},
+        format,
+        string::String,
+    };
     use serde::{
         de::value::{self, BorrowedStrDeserializer},
         ser::Impossible,
@@ -299,6 +374,32 @@ mod tests {
         assert_eq!(de!(prefixed::deserialize::<U256, _>, "42"), U256::new(42));
         assert_eq!(de!(prefixed::deserialize::<U256, _>, "0x2a"), U256::new(42));
         assert_eq!(de!(prefixed::deserialize::<U256, _>, "0x2A"), U256::new(42));
+    }
+
+    #[test]
+    fn formatting_buffer() {
+        for value in [
+            Box::new(I256::MIN) as Box<dyn Display>,
+            Box::new(I256::MAX),
+            Box::new(U256::MIN),
+            Box::new(U256::MAX),
+        ] {
+            let mut f = FormatBuffer::decimal();
+            write!(f, "{value}").unwrap();
+            assert_eq!(f.as_str(), format!("{value}"));
+        }
+
+        for value in [
+            Box::new(I256::MIN) as Box<dyn LowerHex>,
+            Box::new(I256::MAX),
+            Box::new(U256::MIN),
+            Box::new(U256::MAX),
+        ] {
+            let mut f = FormatBuffer::hex();
+            let value = &*value;
+            write!(f, "{value:-#x}").unwrap();
+            assert_eq!(f.as_str(), format!("{value:-#x}"));
+        }
     }
 
     /// A string serializer used for testing.
