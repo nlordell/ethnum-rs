@@ -26,6 +26,8 @@ mod error;
 mod fmt;
 mod int;
 pub mod intrinsics;
+#[cfg(feature = "serde")]
+pub mod serde;
 mod uint;
 
 /// Convenience re-export of 256-integer types and as- conversion traits.

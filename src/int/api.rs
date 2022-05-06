@@ -73,7 +73,7 @@ impl I256 {
     /// assert_eq!(I256::from_str_radix("A", 16), Ok(I256::new(10)));
     /// ```
     pub fn from_str_radix(src: &str, radix: u32) -> Result<Self, ParseIntError> {
-        fmt::from_str_radix(src, radix)
+        fmt::from_str_radix(src, radix, None)
     }
 
     /// Returns the number of ones in the binary representation of `self`.

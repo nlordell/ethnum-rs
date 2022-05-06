@@ -9,6 +9,7 @@ mod ops;
 
 pub use self::convert::AsI256;
 use crate::uint::U256;
+use core::num::ParseIntError;
 
 /// A 256-bit signed integer type.
 #[derive(Clone, Copy, Default, Eq, Hash, PartialEq)]
@@ -110,6 +111,49 @@ impl I256 {
         {
             &mut self.0[0]
         }
+    }
+
+    /// Converts a prefixed string slice in base 16 to an integer.
+    ///
+    /// The string is expected to be an optional `+` or `-` sign followed by
+    /// the `0x` prefix and finally the digits. Leading and trailing whitespace
+    /// represent an error.
+    ///
+    /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    /// ```
+    /// # use ethnum::I256;
+    /// assert_eq!(I256::from_str_hex("0x2A"), Ok(I256::new(42)));
+    /// assert_eq!(I256::from_str_hex("-0xa"), Ok(I256::new(-10)));
+    /// ```
+    pub fn from_str_hex(src: &str) -> Result<Self, ParseIntError> {
+        crate::fmt::from_str_radix(src, 16, Some("0x"))
+    }
+
+    /// Converts a prefixed string slice in a base determined by the prefix to
+    /// an integer.
+    ///
+    /// The string is expected to be an optional `+` or `-` sign followed by
+    /// the one of the supported prefixes and finally the digits. Leading and
+    /// trailing whitespace represent an error. The base is dertermined based
+    /// on the prefix:
+    ///
+    /// * `0x`: base `16`
+    /// * no prefix: base `10`
+    ///
+    /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    /// ```
+    /// # use ethnum::I256;
+    /// assert_eq!(I256::from_str_prefixed("42"), Ok(I256::new(42)));
+    /// assert_eq!(I256::from_str_prefixed("-0xa"), Ok(I256::new(-10)));
+    /// ```
+    pub fn from_str_prefixed(src: &str) -> Result<Self, ParseIntError> {
+        crate::fmt::from_str_prefixed(src)
     }
 
     /// Cast to a primitive `i8`.
