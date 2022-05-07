@@ -5,25 +5,22 @@
 //! information in order to implement 256-bit overflowing multiplication.
 //!
 //! This source is ported from LLVM project from C:
-//! https://github.com/llvm/llvm-project/blob/master/compiler-rt/lib/builtins/multi3.c
+//! <https://github.com/llvm/llvm-project/blob/master/compiler-rt/lib/builtins/multi3.c>
 
 use crate::{int::I256, uint::U256};
 use core::mem::MaybeUninit;
 
 #[inline]
 pub fn umulddi3(a: &u128, b: &u128) -> U256 {
-    let mut high;
-    let mut low;
-
     const BITS_IN_DWORD_2: u32 = 64;
     const LOWER_MASK: u128 = u128::MAX >> BITS_IN_DWORD_2;
 
-    low = (a & LOWER_MASK) * (b & LOWER_MASK);
+    let mut low = (a & LOWER_MASK) * (b & LOWER_MASK);
     let mut t = low >> BITS_IN_DWORD_2;
     low &= LOWER_MASK;
     t += (a >> BITS_IN_DWORD_2) * (b & LOWER_MASK);
     low += (t & LOWER_MASK) << BITS_IN_DWORD_2;
-    high = t >> BITS_IN_DWORD_2;
+    let mut high = t >> BITS_IN_DWORD_2;
     t = low >> BITS_IN_DWORD_2;
     low &= LOWER_MASK;
     t += (b >> BITS_IN_DWORD_2) * (a & LOWER_MASK);

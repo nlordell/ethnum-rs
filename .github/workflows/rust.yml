@@ -17,7 +17,7 @@ jobs:
     - uses: actions/checkout@v2
     - name: Lint
       run: |
-        cargo fmt -- --check
+        cargo fmt --all -- --check
         cargo clippy --workspace --all-targets -- -D warnings
     - name: Test Native Intrinsics
       run: |
@@ -25,5 +25,11 @@ jobs:
         cargo test --release
     - name: Test LLVM Intrinsics
       run: |
+        cargo clippy --features llvm-intrinsics --all-targets -- -D warnings
         cargo test --features llvm-intrinsics
         cargo test --features llvm-intrinsics --release
+    - name: Test Additional Features
+      run: |
+        cargo clippy --features serde --all-targets -- -D warnings
+        cargo test --features serde
+        cargo test --features serde --release

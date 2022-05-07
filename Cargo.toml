@@ -1,6 +1,6 @@
 [package]
 name = "ethnum"
-version = "1.1.1"
+version = "1.2.0"
 authors = ["Nicholas Rodrigues Lordello <nlordell@gmail.com>"]
 edition = "2021"
 description = "256-bit integer implementation"
@@ -11,6 +11,9 @@ repository = "https://github.com/nlordell/ethnum-rs"
 license = "MIT OR Apache-2.0"
 keywords = ["integer", "u256", "ethereum"]
 categories = ["cryptography::cryptocurrencies", "mathematics", "no-std"]
+
+[package.metadata.docs.rs]
+features = ["serde"]
 
 [workspace]
 members = [
@@ -24,3 +27,4 @@ llvm-intrinsics = ["ethnum-intrinsics"]
 
 [dependencies]
 ethnum-intrinsics = { version = "1", path = "intrinsics", optional = true }
+serde = { version = "1", default-features = false, optional = true }

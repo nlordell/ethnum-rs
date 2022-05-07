@@ -3,32 +3,41 @@
 //!
 //! Most of these implementations were ported from the Rust standard library's
 //! implementation for primitive integer types:
-//! https://doc.rust-lang.org/src/core/fmt/num.rs.html
+//! <https://doc.rust-lang.org/src/core/num/mod.rs.html>
+//! <https://doc.rust-lang.org/src/core/fmt/num.rs.html>
 
-use crate::{error, uint::U256};
+use crate::uint::U256;
 use core::{
     fmt,
-    mem::MaybeUninit,
+    mem::{self, MaybeUninit},
     num::{IntErrorKind, ParseIntError},
+    ops::{Add, Mul, Sub},
     ptr, slice, str,
 };
 
 #[doc(hidden)]
-pub(crate) trait FromStrRadixHelper: PartialOrd + Copy {
-    fn min_value() -> Self;
-    fn max_value() -> Self;
+pub(crate) trait FromStrRadixHelper:
+    PartialOrd + Copy + Add<Output = Self> + Sub<Output = Self> + Mul<Output = Self>
+{
+    const MIN: Self;
     fn from_u32(u: u32) -> Self;
     fn checked_mul(&self, other: u32) -> Option<Self>;
     fn checked_sub(&self, other: u32) -> Option<Self>;
     fn checked_add(&self, other: u32) -> Option<Self>;
 }
 
+#[inline(always)]
+fn can_not_overflow<T>(radix: u32, is_signed_ty: bool, digits: &[u8]) -> bool {
+    radix <= 16 && digits.len() <= mem::size_of::<T>() * 2 - is_signed_ty as usize
+}
+
 pub(crate) fn from_str_radix<T: FromStrRadixHelper>(
     src: &str,
     radix: u32,
+    prefix: Option<&str>,
 ) -> Result<T, ParseIntError> {
-    use self::error::pie;
     use self::IntErrorKind::*;
+    use crate::error::pie;
 
     assert!(
         (2..=36).contains(&radix),
@@ -40,7 +49,7 @@ pub(crate) fn from_str_radix<T: FromStrRadixHelper>(
         return Err(pie(Empty));
     }
 
-    let is_signed_ty = T::from_u32(0) > T::min_value();
+    let is_signed_ty = T::from_u32(0) > T::MIN;
 
     // all valid digits are ascii, so we will just iterate over the utf8 bytes
     // and cast them to chars. .to_digit() will safely return None for anything
@@ -48,7 +57,7 @@ pub(crate) fn from_str_radix<T: FromStrRadixHelper>(
     // of multi-byte sequences
     let src = src.as_bytes();
 
-    let (is_positive, digits) = match src[0] {
+    let (is_positive, prefixed_digits) = match src[0] {
         b'+' | b'-' if src[1..].is_empty() => {
             return Err(pie(InvalidDigit));
         }
@@ -57,48 +66,77 @@ pub(crate) fn from_str_radix<T: FromStrRadixHelper>(
         _ => (true, src),
     };
 
+    let digits = match prefix {
+        Some(prefix) => prefixed_digits
+            .strip_prefix(prefix.as_bytes())
+            .ok_or(pie(InvalidDigit))?,
+        None => prefixed_digits,
+    };
+
     let mut result = T::from_u32(0);
-    if is_positive {
-        // The number is positive
-        for &c in digits {
-            let x = match (c as char).to_digit(radix) {
-                Some(x) => x,
-                None => return Err(pie(InvalidDigit)),
-            };
-            result = match result.checked_mul(radix) {
-                Some(result) => result,
-                None => return Err(pie(PosOverflow)),
-            };
-            result = match result.checked_add(x) {
-                Some(result) => result,
-                None => return Err(pie(PosOverflow)),
+
+    if can_not_overflow::<T>(radix, is_signed_ty, digits) {
+        // If the len of the str is short compared to the range of the type
+        // we are parsing into, then we can be certain that an overflow will not occur.
+        // This bound is when `radix.pow(digits.len()) - 1 <= T::MAX` but the condition
+        // above is a faster (conservative) approximation of this.
+        //
+        // Consider radix 16 as it has the highest information density per digit and will thus overflow the earliest:
+        // `u8::MAX` is `ff` - any str of len 2 is guaranteed to not overflow.
+        // `i8::MAX` is `7f` - only a str of len 1 is guaranteed to not overflow.
+        macro_rules! run_unchecked_loop {
+            ($unchecked_additive_op:expr) => {
+                for &c in digits {
+                    result = result * T::from_u32(radix);
+                    let x = (c as char).to_digit(radix).ok_or(pie(InvalidDigit))?;
+                    result = $unchecked_additive_op(result, T::from_u32(x));
+                }
             };
         }
+        if is_positive {
+            run_unchecked_loop!(<T as core::ops::Add>::add)
+        } else {
+            run_unchecked_loop!(<T as core::ops::Sub>::sub)
+        };
     } else {
-        // The number is negative
-        for &c in digits {
-            let x = match (c as char).to_digit(radix) {
-                Some(x) => x,
-                None => return Err(pie(InvalidDigit)),
-            };
-            result = match result.checked_mul(radix) {
-                Some(result) => result,
-                None => return Err(pie(NegOverflow)),
-            };
-            result = match result.checked_sub(x) {
-                Some(result) => result,
-                None => return Err(pie(NegOverflow)),
+        macro_rules! run_checked_loop {
+            ($checked_additive_op:ident, $overflow_err:expr) => {
+                for &c in digits {
+                    // When `radix` is passed in as a literal, rather than doing a slow `imul`
+                    // the compiler can use shifts if `radix` can be expressed as a
+                    // sum of powers of 2 (x*10 can be written as x*8 + x*2).
+                    // When the compiler can't use these optimisations,
+                    // the latency of the multiplication can be hidden by issuing it
+                    // before the result is needed to improve performance on
+                    // modern out-of-order CPU as multiplication here is slower
+                    // than the other instructions, we can get the end result faster
+                    // doing multiplication first and let the CPU spends other cycles
+                    // doing other computation and get multiplication result later.
+                    let mul = result.checked_mul(radix);
+                    let x = (c as char).to_digit(radix).ok_or(pie(InvalidDigit))?;
+                    result = mul.ok_or_else($overflow_err)?;
+                    result = T::$checked_additive_op(&result, x).ok_or_else($overflow_err)?;
+                }
             };
         }
+        if is_positive {
+            run_checked_loop!(checked_add, || pie(PosOverflow))
+        } else {
+            run_checked_loop!(checked_sub, || pie(NegOverflow))
+        };
     }
     Ok(result)
+}
+
+pub(crate) fn from_str_prefixed<T: FromStrRadixHelper>(src: &str) -> Result<T, ParseIntError> {
+    from_str_radix(src, 16, Some("0x")).or_else(|_| from_str_radix(src, 10, None))
 }
 
 pub(crate) trait GenericRadix: Sized {
     const BASE: u8;
     const PREFIX: &'static str;
     fn digit(x: u8) -> u8;
-    fn fmt_u256(&self, mut x: U256, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt_u256(&self, mut x: U256, is_nonnegative: bool, f: &mut fmt::Formatter) -> fmt::Result {
         // The radix can be as low as 2, so we need a buffer of at least 256
         // characters for a base 2 number.
         let zero = U256::ZERO;
@@ -126,7 +164,7 @@ pub(crate) trait GenericRadix: Sized {
                 buf.len(),
             ))
         };
-        f.pad_integral(true, Self::PREFIX, buf)
+        f.pad_integral(is_nonnegative, Self::PREFIX, buf)
     }
 }
 
@@ -243,29 +281,49 @@ mod tests {
     use crate::int::I256;
 
     #[test]
+    fn from_str_prefixed() {
+        assert_eq!(from_str_radix::<U256>("0b101", 2, Some("0b")).unwrap(), 5);
+        assert_eq!(from_str_radix::<I256>("-0xf", 16, Some("0x")).unwrap(), -15);
+    }
+
+    #[test]
     fn from_str_errors() {
         assert_eq!(
-            from_str_radix::<U256>("", 2).unwrap_err().kind(),
+            from_str_radix::<U256>("", 2, None).unwrap_err().kind(),
             &IntErrorKind::Empty,
         );
         assert_eq!(
-            from_str_radix::<U256>("?", 2).unwrap_err().kind(),
+            from_str_radix::<U256>("?", 2, None).unwrap_err().kind(),
             &IntErrorKind::InvalidDigit,
         );
         assert_eq!(
-            from_str_radix::<U256>("-1", 10).unwrap_err().kind(),
-            &IntErrorKind::InvalidDigit,
-        );
-        assert_eq!(
-            from_str_radix::<U256>("zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz", 36)
+            from_str_radix::<U256>("1", 16, Some("0x"))
                 .unwrap_err()
                 .kind(),
+            &IntErrorKind::InvalidDigit,
+        );
+        assert_eq!(
+            from_str_radix::<U256>("-1", 10, None).unwrap_err().kind(),
+            &IntErrorKind::InvalidDigit,
+        );
+        assert_eq!(
+            from_str_radix::<U256>(
+                "zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz",
+                36,
+                None
+            )
+            .unwrap_err()
+            .kind(),
             &IntErrorKind::PosOverflow,
         );
         assert_eq!(
-            from_str_radix::<I256>("-zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz", 36)
-                .unwrap_err()
-                .kind(),
+            from_str_radix::<I256>(
+                "-zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz",
+                36,
+                None
+            )
+            .unwrap_err()
+            .kind(),
             &IntErrorKind::NegOverflow,
         );
     }

@@ -26,15 +26,19 @@ mod error;
 mod fmt;
 mod int;
 pub mod intrinsics;
+#[cfg(feature = "serde")]
+pub mod serde;
 mod uint;
 
 /// Convenience re-export of 256-integer types and as- conversion traits.
 pub mod prelude {
-    pub use crate::int::{AsI256, I256};
-    pub use crate::uint::{AsU256, U256};
+    pub use crate::{AsI256, AsU256, I256, U256};
 }
 
-pub use self::prelude::*;
+pub use crate::{
+    int::{AsI256, I256},
+    uint::{AsU256, U256},
+};
 
 /// A 256-bit signed integer type.
 #[allow(non_camel_case_types)]

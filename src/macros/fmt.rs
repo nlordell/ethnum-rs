@@ -3,14 +3,7 @@
 macro_rules! impl_fmt {
     (impl Fmt for $int:ident;) => {
         impl $crate::fmt::FromStrRadixHelper for $int {
-            #[inline]
-            fn min_value() -> Self {
-                Self::MIN
-            }
-            #[inline]
-            fn max_value() -> Self {
-                Self::MAX
-            }
+            const MIN: Self = Self::MIN;
             #[inline]
             fn from_u32(u: u32) -> Self {
                 Self::from(u)
@@ -34,7 +27,7 @@ macro_rules! impl_fmt {
 
             #[inline]
             fn from_str(s: &str) -> Result<Self, Self::Err> {
-                $crate::fmt::from_str_radix(s, 10)
+                $crate::fmt::from_str_radix(s, 10, None)
             }
         }
 
@@ -105,8 +98,17 @@ macro_rules! __impl_fmt_base {
             #[allow(unused_imports)]
             fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
                 use $crate::{fmt::GenericRadix, uint::AsU256};
-
-                $crate::fmt::$base.fmt_u256(self.as_u256(), f)
+                let (abs, is_nonnegative) = if *self < 0 && f.sign_minus() {
+                    // NOTE(nlordell): This is non-standard break from the Rust
+                    // standard integer types, but allows `format!("{val:-#x")`
+                    // notation for formating a number as `-0x...` (and in
+                    // in general prefix with a `-` sign for negative numbers
+                    // with radix formatting.
+                    (self.wrapping_neg(), false)
+                } else {
+                    (*self, true)
+                };
+                $crate::fmt::$base.fmt_u256(abs.as_u256(), is_nonnegative, f)
             }
         }
     };

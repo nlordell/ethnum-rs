@@ -6,8 +6,8 @@
 //! 256-bit division.
 //!
 //! This source is ported from LLVM project from C:
-//! - signed division: https://github.com/llvm/llvm-project/blob/main/compiler-rt/lib/builtins/divmodti4.c
-//! - unsigned division: https://github.com/llvm/llvm-project/blob/main/compiler-rt/lib/builtins/udivmodti4.c
+//! - signed division: <https://github.com/llvm/llvm-project/blob/main/compiler-rt/lib/builtins/divmodti4.c>
+//! - unsigned division: <https://github.com/llvm/llvm-project/blob/main/compiler-rt/lib/builtins/udivmodti4.c>
 
 use crate::{int::I256, uint::U256};
 use core::mem::MaybeUninit;
@@ -20,10 +20,8 @@ fn udiv256_by_128_to_128(u1: u128, u0: u128, mut v: u128, r: &mut u128) -> u128 
     let (vn1, vn0): (u128, u128); // Norm. divisor digits
     let (mut q1, mut q0): (u128, u128); // Quotient digits
     let (un128, un21, un10): (u128, u128, u128); // Dividend digit pairs
-    let mut rhat: u128; // A remainder
-    let s: u32; // Shift amount for normalization
 
-    s = v.leading_zeros();
+    let s = v.leading_zeros();
     if s > 0 {
         // Normalize the divisor.
         v <<= s;
@@ -45,7 +43,7 @@ fn udiv256_by_128_to_128(u1: u128, u0: u128, mut v: u128, r: &mut u128) -> u128 
 
     // Compute the first quotient digit, q1.
     q1 = un128 / vn1;
-    rhat = un128 - q1 * vn1;
+    let mut rhat = un128 - q1 * vn1;
 
     // q1 has at most error 2. No more than 2 iterations.
     while q1 >= B || q1 * vn0 > B * rhat + un1 {
