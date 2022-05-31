@@ -157,6 +157,146 @@ pub mod prefixed {
     }
 }
 
+/// Module for use with `#[serde(with = "ethnum::serde::permissive")]` to
+/// specify extremely permissive serialization for 256-bit integer types.
+///
+/// This allows serialization to also accept standard numerical types as values
+/// in addition to prefixed strings.
+pub mod permissive {
+    use super::{prefixed::Prefixed, FormatVisitor};
+    use crate::{AsI256 as _, I256, U256};
+    use core::fmt::{self, Formatter};
+    use core::marker::PhantomData;
+    use serde::{
+        de::{self, Deserializer, Visitor},
+        Serializer,
+    };
+
+    #[doc(hidden)]
+    pub trait Permissive: Prefixed {
+        fn cast(value: I256) -> Self;
+    }
+
+    impl Permissive for I256 {
+        fn cast(value: I256) -> Self {
+            value
+        }
+    }
+
+    impl Permissive for U256 {
+        fn cast(value: I256) -> Self {
+            value.as_u256()
+        }
+    }
+
+    #[doc(hidden)]
+    pub fn serialize<T, S>(value: &T, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        T: Permissive,
+        S: Serializer,
+    {
+        value.serialize(serializer)
+    }
+
+    struct PermissiveVisitor<T>(PhantomData<T>);
+
+    impl<'de, T> Visitor<'de> for PermissiveVisitor<T>
+    where
+        T: Permissive,
+    {
+        type Value = T;
+
+        fn expecting(&self, f: &mut Formatter) -> fmt::Result {
+            f.write_str("number, decimal string or '0x-' prefixed hexadecimal string")
+        }
+
+        fn visit_i64<E>(self, v: i64) -> Result<Self::Value, E>
+        where
+            E: de::Error,
+        {
+            Ok(T::cast(v.as_i256()))
+        }
+
+        fn visit_u64<E>(self, v: u64) -> Result<Self::Value, E>
+        where
+            E: de::Error,
+        {
+            Ok(T::cast(v.as_i256()))
+        }
+
+        fn visit_i128<E>(self, v: i128) -> Result<Self::Value, E>
+        where
+            E: de::Error,
+        {
+            Ok(T::cast(v.as_i256()))
+        }
+
+        fn visit_u128<E>(self, v: u128) -> Result<Self::Value, E>
+        where
+            E: de::Error,
+        {
+            Ok(T::cast(v.as_i256()))
+        }
+
+        fn visit_f32<E>(self, v: f32) -> Result<Self::Value, E>
+        where
+            E: de::Error,
+        {
+            const N: f32 = (1_u64 << 24) as _;
+            if !(-N..N).contains(&v) {
+                return Err(de::Error::custom(
+                    "invalid conversion from single precision floating point \
+                     number outside of valid integer range (-2^24, 2^24)",
+                ));
+            }
+
+            self.visit_f64(v as _)
+        }
+
+        fn visit_f64<E>(self, v: f64) -> Result<Self::Value, E>
+        where
+            E: de::Error,
+        {
+            const N: f64 = (1_u64 << 53) as _;
+            if !(-N..N).contains(&v) {
+                return Err(de::Error::custom(
+                    "invalid conversion from double precision floating point \
+                     number outside of valid integer range (-2^53, 2^53)",
+                ));
+            }
+
+            // SOUNDNESS: `#[no_std]` does not have `f64::fract`, so work around
+            // it by casting to and from an integer type. This is sound because
+            // we already verified that the `f64` is within a "safe" range.
+            let i = v as i64;
+            if i as f64 != v {
+                return Err(de::Error::custom(
+                    "invalid conversion from floating point number \
+                     with fractional part to 256-bit integer",
+                ));
+            }
+
+            Ok(T::cast(i.as_i256()))
+        }
+
+        fn visit_str<E>(self, v: &str) -> Result<Self::Value, E>
+        where
+            E: de::Error,
+        {
+            FormatVisitor(T::from_str_prefixed).visit_str(v)
+        }
+    }
+
+    #[doc(hidden)]
+    pub fn deserialize<'de, T, D>(deserializer: D) -> Result<T, D::Error>
+    where
+        T: Permissive,
+        D: Deserializer<'de>,
+    {
+        deserializer.deserialize_any(PermissiveVisitor(PhantomData))
+    }
+}
+
 /// Internal visitor struct implementation to facilitate implementing different
 /// serialization formats.
 struct FormatVisitor<F>(F);
@@ -268,7 +408,7 @@ mod tests {
         string::String,
     };
     use serde::{
-        de::value::{self, BorrowedStrDeserializer},
+        de::{value, IntoDeserializer},
         ser::Impossible,
     };
 
@@ -310,14 +450,21 @@ mod tests {
             ser!(decimal::serialize, U256::MAX),
             "115792089237316195423570985008687907853269984665640564039457584007913129639935",
         );
+
+        assert_eq!(ser!(prefixed::serialize, I256::new(42)), "0x2a");
+        assert_eq!(ser!(permissive::serialize, I256::new(42)), "0x2a");
     }
 
     #[test]
     fn deserialize_integers() {
         macro_rules! de {
-            ($method:expr, $src:literal) => {{
-                let deserializer = BorrowedStrDeserializer::<value::Error>::new($src);
+            ($method:expr, $src:expr) => {{
+                let deserializer = IntoDeserializer::<value::Error>::into_deserializer($src);
                 ($method)(deserializer).unwrap()
+            }};
+            (err; $method:expr, $src:expr) => {{
+                let deserializer = IntoDeserializer::<value::Error>::into_deserializer($src);
+                ($method)(deserializer).is_err()
             }};
         }
 
@@ -374,6 +521,110 @@ mod tests {
         assert_eq!(de!(prefixed::deserialize::<U256, _>, "42"), U256::new(42));
         assert_eq!(de!(prefixed::deserialize::<U256, _>, "0x2a"), U256::new(42));
         assert_eq!(de!(prefixed::deserialize::<U256, _>, "0x2A"), U256::new(42));
+
+        assert_eq!(
+            de!(permissive::deserialize::<I256, _>, -42_i64),
+            I256::new(-42)
+        );
+        assert_eq!(
+            de!(permissive::deserialize::<I256, _>, 42_u64),
+            I256::new(42)
+        );
+        assert_eq!(
+            de!(permissive::deserialize::<I256, _>, -1337_i128),
+            I256::new(-1337)
+        );
+        assert_eq!(
+            de!(permissive::deserialize::<I256, _>, 1337_u128),
+            I256::new(1337)
+        );
+        assert_eq!(
+            de!(permissive::deserialize::<I256, _>, 100.0_f32),
+            I256::new(100)
+        );
+        assert_eq!(
+            de!(permissive::deserialize::<I256, _>, -100.0_f64),
+            I256::new(-100)
+        );
+        assert_eq!(de!(permissive::deserialize::<I256, _>, "-1"), I256::new(-1));
+        assert_eq!(
+            de!(permissive::deserialize::<I256, _>, "1000"),
+            I256::new(1000)
+        );
+        assert_eq!(
+            de!(permissive::deserialize::<I256, _>, "0x42"),
+            I256::new(0x42)
+        );
+        assert_eq!(
+            de!(permissive::deserialize::<I256, _>, "-0x2a"),
+            I256::new(-42)
+        );
+        assert_eq!(
+            de!(
+                permissive::deserialize::<I256, _>,
+                "0x7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+            ),
+            I256::MAX
+        );
+        assert_eq!(
+            de!(
+                permissive::deserialize::<I256, _>,
+                "-0x8000000000000000000000000000000000000000000000000000000000000000"
+            ),
+            I256::MIN
+        );
+
+        assert_eq!(
+            de!(permissive::deserialize::<U256, _>, 42_u64),
+            U256::new(42)
+        );
+        assert_eq!(
+            de!(permissive::deserialize::<U256, _>, 1337_u128),
+            U256::new(1337)
+        );
+        assert_eq!(
+            de!(permissive::deserialize::<U256, _>, 100.0_f32),
+            U256::new(100)
+        );
+        assert_eq!(
+            de!(permissive::deserialize::<U256, _>, 100.0_f64),
+            U256::new(100)
+        );
+        assert_eq!(
+            de!(permissive::deserialize::<U256, _>, "1000"),
+            U256::new(1000)
+        );
+        assert_eq!(
+            de!(permissive::deserialize::<U256, _>, "0x42"),
+            U256::new(0x42)
+        );
+        assert_eq!(
+            de!(
+                permissive::deserialize::<U256, _>,
+                "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+            ),
+            U256::MAX
+        );
+
+        assert!(de!(err; permissive::deserialize::<I256, _>, 4.2_f32));
+        assert!(de!(err; permissive::deserialize::<I256, _>, 16777216.0_f32));
+        assert!(de!(err; permissive::deserialize::<I256, _>, -13.37_f64));
+        assert!(de!(err; permissive::deserialize::<I256, _>, 9007199254740992.0_f32));
+        assert!(
+            de!(err; permissive::deserialize::<I256, _>, "0x8000000000000000000000000000000000000000000000000000000000000000")
+        );
+        assert!(
+            de!(err; permissive::deserialize::<I256, _>, "-0x8000000000000000000000000000000000000000000000000000000000000001"
+            )
+        );
+
+        assert!(de!(err; permissive::deserialize::<U256, _>, 4.2_f32));
+        assert!(de!(err; permissive::deserialize::<U256, _>, 16777216.0_f32));
+        assert!(de!(err; permissive::deserialize::<U256, _>, 13.37_f64));
+        assert!(de!(err; permissive::deserialize::<U256, _>, 9007199254740992.0_f32));
+        assert!(
+            de!(err; permissive::deserialize::<U256, _>, "0x10000000000000000000000000000000000000000000000000000000000000000")
+        );
     }
 
     #[test]
