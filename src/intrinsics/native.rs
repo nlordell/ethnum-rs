@@ -4,6 +4,7 @@
 mod add;
 mod ctz;
 mod divmod;
+mod intx;
 mod mul;
 mod rot;
 mod shl;
