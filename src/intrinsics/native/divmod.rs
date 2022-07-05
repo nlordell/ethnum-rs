@@ -108,11 +108,9 @@ pub fn udivmod4(
         return;
     }
 
-    const N_UDWORD_BITS: u32 = 128;
-
-    let mut dividend = *a;
-    let mut divisor = *b;
-    let mut quotient: U256;
+    let dividend = *a;
+    let divisor = *b;
+    let quotient: U256;
     let mut remainder: U256;
 
     if divisor > dividend {
@@ -156,32 +154,197 @@ pub fn udivmod4(
         return;
     }
 
-    // 0 <= shift <= 127.
-    let shift = divisor.high().leading_zeros() - dividend.high().leading_zeros();
+    (quotient, remainder) = div_mod_knuth(&dividend, &divisor);
 
-    divisor <<= shift;
-    quotient = U256::ZERO;
-    for _ in 0..=shift {
-        *quotient.low_mut() <<= 1;
-        // Branch free version of.
-        // if (dividend.all >= divisor.all)
-        // {
-        //    dividend.all -= divisor.all;
-        //    carry = 1;
-        // }
-        let s = ((*divisor
-            .wrapping_sub(dividend)
-            .wrapping_sub(U256::ONE)
-            .high() as i128)
-            >> (N_UDWORD_BITS - 1)) as u128;
-        *quotient.low_mut() |= s & 1;
-        dividend -= divisor & U256::from_words(s, s);
-        divisor >>= 1;
-    }
     if let Some(rem) = rem {
-        rem.write(dividend);
+        rem.write(remainder);
     }
     res.write(quotient);
+}
+
+
+// See Knuth, TAOCP, Volume 2, section 4.3.1, Algorithm D.
+// https://skanthak.homepage.t-online.de/division.html
+#[inline]
+pub fn div_mod_knuth(u: &U256, v: &U256) -> (U256, U256) {
+    const N_UDWORD_BITS: u32 = 128;
+
+    #[inline]
+    fn full_shl(a: &U256, shift: u32) -> [u128; 3] {
+        debug_assert!(shift < N_UDWORD_BITS);
+        let mut u = [0_u128; 3];
+        let u_lo = a.low() << shift;
+        let u_hi = a >> N_UDWORD_BITS - shift;
+        u[0] = u_lo;
+        u[1] = *u_hi.low();
+        u[2] = *u_hi.high();
+
+        u
+    }
+
+    #[inline]
+    fn full_shr(u: &[u128; 3], shift: u32) -> U256 {
+        debug_assert!(shift < N_UDWORD_BITS);
+        let mut res = U256::ZERO;
+        *res.low_mut() = u[0] >> shift;
+        *res.high_mut() = u[1] >> shift;
+        // carry
+        if shift > 0 {
+            let sh = N_UDWORD_BITS - shift;
+            *res.low_mut() |= u[1] << sh;
+            *res.high_mut() |= u[2] << sh;
+        }
+
+        res
+    }
+
+    // returns (lo, hi)
+    #[inline]
+    const fn split_u128_to_u128(a: u128) -> (u128, u128) {
+        (a & 0xFFFFFFFFFFFFFFFF, a >> N_UDWORD_BITS / 2)
+    }
+
+    // returns (lo, hi)
+    #[inline]
+    const fn fullmul_u128(a: u128, b: u128) -> (u128, u128) {
+        let (a0, a1) = split_u128_to_u128(a);
+        let (b0, b1) = split_u128_to_u128(b);
+
+        let mut t = a0 * b0;
+        let mut k: u128;
+        let w3: u128;
+        (w3, k) = split_u128_to_u128(t);
+
+        t = a1 * b0 + k;
+        let (w1, w2) = split_u128_to_u128(t);
+        t = a0 * b1 + w1;
+        k = t >> 64;
+
+        let w_hi = a1 * b1 + w2 + k;
+        let w_lo = (t << 64) + w3;
+
+        (w_lo, w_hi)
+    }
+
+    #[inline]
+    fn fullmul_u256_u128(a: &U256, b: u128) -> [u128; 3] {
+        let mut acc = [0_u128; 3];
+        let mut lo: u128;
+        let mut carry: u128;
+        let c: bool;
+        if b != 0 {
+            (lo, carry) = fullmul_u128(*a.low(), b);
+            acc[0] = lo;
+            acc[1] = carry;
+            (lo, carry) = fullmul_u128(*a.high(), b);
+            (acc[1], c) = acc[1].overflowing_add(lo);
+            acc[2] = carry + c as u128;
+        }
+
+        acc
+    }
+
+    #[inline]
+    const fn add_carry(a: u128, b: u128, c: bool) -> (u128, bool) {
+        let (res1, overflow1) = b.overflowing_add(c as u128);
+        let (res2, overflow2) = u128::overflowing_add(a, res1);
+
+        (res2, overflow1 || overflow2)
+    }
+
+    #[inline]
+    const fn sub_carry(a: u128, b: u128, c: bool) -> (u128, bool) {
+        let (res1, overflow1) = b.overflowing_add(c as u128);
+        let (res2, overflow2) = u128::overflowing_sub(a, res1);
+
+        (res2, overflow1 || overflow2)
+    }
+
+    // D1.
+    // Make sure 128th bit in v's highest word is set.
+    // If we shift both u and v, it won't affect the quotient
+    // and the remainder will only need to be shifted back.
+    let shift = v.high().leading_zeros();
+    debug_assert!(shift < N_UDWORD_BITS);
+    let v = v << shift;
+    debug_assert!(v.high() >> N_UDWORD_BITS - 1 == 1);
+    // u will store the remainder (shifted)
+    let mut u = full_shl(u, shift);
+
+    // quotient
+    let mut q = U256::ZERO;
+    let v_n_1 = *v.high();
+    let v_n_2 = *v.low();
+
+    // D2. D7. - unrolled loop j == 0, n == 2, m == 0 (only one possible iteration)
+    let mut r_hat: u128 = 0;
+    let u_jn = u[2];
+
+    // D3.
+    // q_hat is our guess for the j-th quotient digit
+    // q_hat = min(b - 1, (u_{j+n} * b + u_{j+n-1}) / v_{n-1})
+    // b = 1 << WORD_BITS
+    // Theorem B: q_hat >= q_j >= q_hat - 2
+    let mut q_hat = if u_jn < v_n_1 {
+        //let (mut q_hat, mut r_hat) = _div_mod_u128(u_jn, u[j + n - 1], v_n_1);
+        let mut q_hat = udiv256_by_128_to_128(u_jn, u[1], v_n_1, &mut r_hat);
+        let mut overflow: bool;
+        // this loop takes at most 2 iterations
+        loop {
+            let another_iteration = {
+                // check if q_hat * v_{n-2} > b * r_hat + u_{j+n-2}
+                let (lo, hi) = fullmul_u128(q_hat, v_n_2);
+                hi > r_hat || (hi == r_hat && lo > u[0])
+            };
+            if !another_iteration {
+                break;
+            }
+            q_hat -= 1;
+            (r_hat, overflow) = r_hat.overflowing_add(v_n_1);
+            // if r_hat overflowed, we're done
+            if overflow {
+                break;
+            }
+        }
+        q_hat
+    } else {
+        // here q_hat >= q_j >= q_hat - 1
+        u128::MAX
+    };
+
+    // ex. 20:
+    // since q_hat * v_{n-2} <= b * r_hat + u_{j+n-2},
+    // either q_hat == q_j, or q_hat == q_j + 1
+
+    // D4.
+    // let's assume optimistically q_hat == q_j
+    // subtract (q_hat * v) from u[j..]
+    let q_hat_v = fullmul_u256_u128(&v, q_hat);
+    // u[j..] -= q_hat_v;
+    let mut c = false;
+    (u[0], c) = sub_carry(u[0], q_hat_v[0], c);
+    (u[1], c) = sub_carry(u[1], q_hat_v[1], c);
+    (u[2], c) = sub_carry(u[2], q_hat_v[2], c);
+
+    // D6.
+    // actually, q_hat == q_j + 1 and u[j..] has overflowed
+    // highly unlikely ~ (1 / 2^127)
+    if c {
+        q_hat -= 1;
+        // add v to u[j..]
+        c = false;
+        (u[0], c) = add_carry(u[0], *v.low(), c);
+        (u[1], c) = add_carry(u[1], *v.high(), c);
+        u[2] = u[2].wrapping_add(c as u128);
+    }
+
+    // D5.
+    *q.low_mut() = q_hat;
+
+    // D8.
+    let remainder = full_shr(&u, shift);
+
+    (q, remainder)
 }
 
 #[inline]
