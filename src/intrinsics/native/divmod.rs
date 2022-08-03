@@ -162,7 +162,6 @@ pub fn udivmod4(
     res.write(quotient);
 }
 
-
 // See Knuth, TAOCP, Volume 2, section 4.3.1, Algorithm D.
 // https://skanthak.homepage.t-online.de/division.html
 #[inline]
@@ -174,7 +173,7 @@ pub fn div_mod_knuth(u: &U256, v: &U256) -> (U256, U256) {
         debug_assert!(shift < N_UDWORD_BITS);
         let mut u = [0_u128; 3];
         let u_lo = a.low() << shift;
-        let u_hi = a >> N_UDWORD_BITS - shift;
+        let u_hi = a >> (N_UDWORD_BITS - shift);
         u[0] = u_lo;
         u[1] = *u_hi.low();
         u[2] = *u_hi.high();
@@ -201,7 +200,7 @@ pub fn div_mod_knuth(u: &U256, v: &U256) -> (U256, U256) {
     // returns (lo, hi)
     #[inline]
     const fn split_u128_to_u128(a: u128) -> (u128, u128) {
-        (a & 0xFFFFFFFFFFFFFFFF, a >> N_UDWORD_BITS / 2)
+        (a & 0xFFFFFFFFFFFFFFFF, a >> (N_UDWORD_BITS / 2))
     }
 
     // returns (lo, hi)
@@ -267,7 +266,7 @@ pub fn div_mod_knuth(u: &U256, v: &U256) -> (U256, U256) {
     let shift = v.high().leading_zeros();
     debug_assert!(shift < N_UDWORD_BITS);
     let v = v << shift;
-    debug_assert!(v.high() >> N_UDWORD_BITS - 1 == 1);
+    debug_assert!(v.high() >> (N_UDWORD_BITS - 1) == 1);
     // u will store the remainder (shifted)
     let mut u = full_shl(u, shift);
 
