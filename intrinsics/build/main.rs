@@ -36,8 +36,9 @@ fn main() -> Result<(), Box<dyn Error>> {
             .replace("i128", "i256")
             .replace(" 127", " 255")
             .replace("dereferenceable(16)", "dereferenceable(32)")
-            // TODO(nlordell): Figure out why Clang doesn't like this
-            .replace("mustprogress ", "");
+            // TODO(nlordell): Figure out why Clang doesn't like these
+            .replace("mustprogress ", "")
+            .replace("noundef ", "");
         let path = out_dir.join("intrinsics.ll");
         fs::write(&path, source)?;
         path

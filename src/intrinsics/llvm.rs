@@ -26,7 +26,7 @@ macro_rules! def {
         ) $(-> $ret)? {
             unsafe {
                 ethnum_intrinsics::$name($(
-                    #[allow(clippy::transmute_ptr_to_ptr)]
+                    #[allow(clippy::transmute_ptr_to_ptr, clippy::useless_transmute)]
                     mem::transmute($p)
                 ),*)
             }
