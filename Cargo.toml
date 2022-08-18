@@ -28,3 +28,4 @@ llvm-intrinsics = ["ethnum-intrinsics"]
 [dependencies]
 ethnum-intrinsics = { version = "1", path = "intrinsics", optional = true }
 serde = { version = "1", default-features = false, optional = true }
+intx = { path = "intx" }

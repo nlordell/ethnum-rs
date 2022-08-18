@@ -80,8 +80,25 @@ fn udiv256_by_128_to_128(u1: u128, u0: u128, mut v: u128, r: &mut u128) -> u128 
     q1 * B + q0
 }
 
-#[allow(clippy::many_single_char_names)]
 pub fn udivmod4(
+    res: &mut MaybeUninit<U256>,
+    a: &U256,
+    b: &U256,
+    rem: Option<&mut MaybeUninit<U256>>,
+) {
+    assert!(*b != 0);
+    use core::mem;
+    unsafe {
+        let (q, r) = intx::udivmod256(&*(a as *const U256).cast(), &*(b as *const U256).cast());
+        res.write(mem::transmute(q));
+        if let Some(rem) = rem {
+            rem.write(mem::transmute(r));
+        }
+    }
+}
+
+#[allow(clippy::many_single_char_names)]
+pub fn udivmod4_old(
     res: &mut MaybeUninit<U256>,
     a: &U256,
     b: &U256,
