@@ -86,6 +86,16 @@ pub fn udivmod4(
     b: &U256,
     rem: Option<&mut MaybeUninit<U256>>,
 ) {
+    // For some reason, performs slightly worse on the #/# case.
+    if a.high() | b.high() == 0 {
+        let v = intx::div128::udivrem(*a.low(), *b.low());
+        if let Some(rem) = rem {
+            rem.write(U256::from_words(0, v.rem));
+        }
+        res.write(U256::from_words(0, v.quot));
+        return;
+    }
+
     assert!(*b != 0);
     use core::mem;
     unsafe {
