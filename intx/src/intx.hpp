@@ -786,10 +786,30 @@ inline div_result<uint64_t, uint128> udivrem_3by2(
     return {q[1], r};
 }
 
+#if defined(__x86_64__)
+inline uint64_t udiv128by64to64(uint64_t u1, uint64_t u0, uint64_t v, uint64_t *r) noexcept
+{
+    uint64_t result;
+    __asm__("divq %[v]"
+            : "=a"(result), "=d"(*r)
+            : [ v ] "r"(v), "a"(u0), "d"(u1));
+    return result;
+}
+#endif
+
 inline div_result<uint128> udivrem(uint128 x, uint128 y) noexcept
 {
     if (y[1] == 0)
     {
+#if defined(__x86_64__)
+        if (x[1] < y[0])
+        {
+            uint64_t r;
+            const auto q = udiv128by64to64(x[1], x[0], y[0], &r);
+            return {{q, 0}, r};
+        }
+#endif
+
         INTX_REQUIRE(y[0] != 0);  // Division by 0.
 
         const auto lsh = clz(y[0]);

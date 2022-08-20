@@ -49,7 +49,6 @@ const fn umul(x: u64, y: u64) -> u128 {
 
 #[inline(always)]
 const fn u128w(x: u128) -> [u64; 2] {
-    //mem::transmute(x)
     [x as _, (x >> 64) as _]
 }
 
@@ -66,8 +65,7 @@ fn reciprocal_2by1(d: u64) -> u64 {
     debug_assert!(d & 0x8000000000000000 != 0, "must be normalized");
 
     let d9 = d >> 55;
-    let v0 = RECIPROCAL_TABLE[(d9 - 256) as usize] as u64;
-    //let v0 = unsafe { RECIPROCAL_TABLE.get_unchecked((d9 - 256) as usize) } as u64;
+    let v0 = unsafe { *RECIPROCAL_TABLE.get_unchecked((d9 - 256) as usize) } as u64;
 
     let d40 = (d >> 24) + 1;
     let v1: u64 = ((v0 as u64) << 11)
@@ -173,9 +171,19 @@ fn udivrem_3by2(u2: u64, u1: u64, u0: u64, d: u128, v: u64) -> DivResult<u64, u1
     }
 }
 
-#[inline]
+#[inline(always)]
 pub fn udivrem(x: u128, y: u128) -> DivResult<u128> {
     if u128w(y)[1] == 0 {
+        // Take advantage that this optimizes to a `divq` instruction on x86_64
+        // that computes the quotient and remainder of a `u128` by a `u64`.
+        #[cfg(target_arch = "x86_64")]
+        if u128w(x)[1] < u128w(y)[0] {
+            return DivResult {
+                quot: x / y,
+                rem: x % y,
+            };
+        }
+
         assert!(u128w(y)[0] != 0, "division by 0");
 
         let lsh = u128w(y)[0].leading_zeros();
