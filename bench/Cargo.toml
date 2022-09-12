@@ -13,5 +13,5 @@ llvm-intrinsics = ["ethnum/llvm-intrinsics"]
 
 [dependencies]
 ethnum = { path = ".." }
-criterion = "0.3"
+criterion = "0.4"
 primitive-types = { version = "0.11", optional = true }
