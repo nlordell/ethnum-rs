@@ -297,6 +297,88 @@ pub mod permissive {
     }
 }
 
+/// Module for use with `#[serde(with = "ethnum::serde::binary")]` to
+/// specify little endian binary serialization for 256-bit integer types.
+pub mod binary {
+    use crate::{I256, U256};
+    use core::convert::TryInto;
+    use core::fmt::{self, Formatter};
+    use core::marker::PhantomData;
+    use serde::{
+        de::{self, Deserializer, Visitor},
+        Serializer,
+    };
+
+    #[doc(hidden)]
+    pub trait Binary: Sized + Copy {
+        fn to_bytes(self) -> [u8; 32];
+        fn from_bytes(bytes: [u8; 32]) -> Self;
+    }
+
+    impl Binary for I256 {
+        fn to_bytes(self) -> [u8; 32] {
+            self.to_le_bytes()
+        }
+
+        fn from_bytes(bytes: [u8; 32]) -> Self {
+            I256::from_le_bytes(bytes)
+        }
+    }
+
+    impl Binary for U256 {
+        fn to_bytes(self) -> [u8; 32] {
+            self.to_le_bytes()
+        }
+
+        fn from_bytes(bytes: [u8; 32]) -> Self {
+            U256::from_le_bytes(bytes)
+        }
+    }
+
+    #[doc(hidden)]
+    pub fn serialize<T, S>(value: &T, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        T: Binary,
+        S: Serializer,
+    {
+        let bytes = value.to_bytes();
+        serializer.serialize_bytes(&bytes)
+    }
+
+    struct BinaryVisitor<T>(PhantomData<T>);
+
+    impl<'de, T> Visitor<'de> for BinaryVisitor<T>
+    where
+        T: Binary,
+    {
+        type Value = T;
+
+        fn expecting(&self, f: &mut Formatter) -> fmt::Result {
+            f.write_str("32 bytes in little endian")
+        }
+
+        fn visit_bytes<E>(self, v: &[u8]) -> Result<Self::Value, E>
+        where
+            E: de::Error,
+        {
+            let bytes = v
+                .try_into()
+                .map_err(|_| E::invalid_length(v.len(), &self))?;
+
+            Ok(T::from_bytes(bytes))
+        }
+    }
+
+    #[doc(hidden)]
+    pub fn deserialize<'de, T, D>(deserializer: D) -> Result<T, D::Error>
+    where
+        T: Binary,
+        D: Deserializer<'de>,
+    {
+        deserializer.deserialize_bytes(BinaryVisitor(PhantomData))
+    }
+}
+
 /// Internal visitor struct implementation to facilitate implementing different
 /// serialization formats.
 struct FormatVisitor<F>(F);
@@ -406,6 +488,8 @@ mod tests {
         fmt::{Display, LowerHex},
         format,
         string::String,
+        vec,
+        vec::Vec,
     };
     use serde::{
         de::{value, IntoDeserializer},
@@ -418,6 +502,13 @@ mod tests {
             ($method:expr, $value:expr) => {{
                 let value = $value;
                 ($method)(&value, StringSerializer).unwrap()
+            }};
+        }
+
+        macro_rules! bin_ser {
+            ($method:expr, $value:expr) => {{
+                let value = $value;
+                ($method)(&value, BytesSerializer).unwrap()
             }};
         }
 
@@ -453,6 +544,24 @@ mod tests {
 
         assert_eq!(ser!(prefixed::serialize, I256::new(42)), "0x2a");
         assert_eq!(ser!(permissive::serialize, I256::new(42)), "0x2a");
+
+        assert_eq!(bin_ser!(binary::serialize, U256::ZERO), vec![0_u8; 32]);
+        assert_eq!(bin_ser!(binary::serialize, U256::MAX), vec![0xFF_u8; 32]);
+        assert_eq!(bin_ser!(binary::serialize, U256::new(0x4215)), {
+            let mut v = vec![0x15, 0x42];
+            v.resize(32, 0);
+            v
+        });
+
+        assert_eq!(
+            bin_ser!(binary::serialize, I256::new(-1)),
+            vec![0xFF_u8; 32]
+        );
+        assert_eq!(bin_ser!(binary::serialize, I256::new(-424242)), {
+            let mut v = vec![0xCE, 0x86, 0xF9];
+            v.resize(32, 0xFF);
+            v
+        });
     }
 
     #[test]
@@ -625,6 +734,36 @@ mod tests {
         assert!(
             de!(err; permissive::deserialize::<U256, _>, "0x10000000000000000000000000000000000000000000000000000000000000000")
         );
+
+        assert_eq!(
+            de!(binary::deserialize::<U256, _>, [0; 32].as_slice()),
+            U256::ZERO
+        );
+
+        assert_eq!(
+            de!(binary::deserialize::<U256, _>, [0xFF; 32].as_slice()),
+            U256::MAX
+        );
+
+        let forty_two = {
+            let mut v = vec![42];
+            v.resize(32, 0);
+            v
+        };
+        assert_eq!(
+            de!(binary::deserialize::<U256, _>, forty_two.as_slice()),
+            U256::new(42)
+        );
+
+        assert_eq!(
+            de!(binary::deserialize::<I256, _>, [0; 32].as_slice()),
+            I256::ZERO
+        );
+
+        assert_eq!(
+            de!(binary::deserialize::<I256, _>, [0xFF; 32].as_slice()),
+            I256::new(-1)
+        );
     }
 
     #[test]
@@ -707,6 +846,155 @@ mod tests {
         }
         fn serialize_bytes(self, _: &[u8]) -> Result<Self::Ok, Self::Error> {
             unimplemented!()
+        }
+        fn serialize_none(self) -> Result<Self::Ok, Self::Error> {
+            unimplemented!()
+        }
+        fn serialize_some<T: ?Sized>(self, _: &T) -> Result<Self::Ok, Self::Error>
+        where
+            T: Serialize,
+        {
+            unimplemented!()
+        }
+        fn serialize_unit(self) -> Result<Self::Ok, Self::Error> {
+            unimplemented!()
+        }
+        fn serialize_unit_struct(self, _: &'static str) -> Result<Self::Ok, Self::Error> {
+            unimplemented!()
+        }
+        fn serialize_unit_variant(
+            self,
+            _: &'static str,
+            _: u32,
+            _: &'static str,
+        ) -> Result<Self::Ok, Self::Error> {
+            unimplemented!()
+        }
+        fn serialize_newtype_struct<T: ?Sized>(
+            self,
+            _: &'static str,
+            _: &T,
+        ) -> Result<Self::Ok, Self::Error>
+        where
+            T: Serialize,
+        {
+            unimplemented!()
+        }
+        fn serialize_newtype_variant<T: ?Sized>(
+            self,
+            _: &'static str,
+            _: u32,
+            _: &'static str,
+            _: &T,
+        ) -> Result<Self::Ok, Self::Error>
+        where
+            T: Serialize,
+        {
+            unimplemented!()
+        }
+        fn serialize_seq(self, _: Option<usize>) -> Result<Self::SerializeSeq, Self::Error> {
+            unimplemented!()
+        }
+        fn serialize_tuple(self, _: usize) -> Result<Self::SerializeTuple, Self::Error> {
+            unimplemented!()
+        }
+        fn serialize_tuple_struct(
+            self,
+            _: &'static str,
+            _: usize,
+        ) -> Result<Self::SerializeTupleStruct, Self::Error> {
+            unimplemented!()
+        }
+        fn serialize_tuple_variant(
+            self,
+            _: &'static str,
+            _: u32,
+            _: &'static str,
+            _: usize,
+        ) -> Result<Self::SerializeTupleVariant, Self::Error> {
+            unimplemented!()
+        }
+        fn serialize_map(self, _: Option<usize>) -> Result<Self::SerializeMap, Self::Error> {
+            unimplemented!()
+        }
+        fn serialize_struct(
+            self,
+            _: &'static str,
+            _: usize,
+        ) -> Result<Self::SerializeStruct, Self::Error> {
+            unimplemented!()
+        }
+        fn serialize_struct_variant(
+            self,
+            _: &'static str,
+            _: u32,
+            _: &'static str,
+            _: usize,
+        ) -> Result<Self::SerializeStructVariant, Self::Error> {
+            unimplemented!()
+        }
+        fn collect_str<T>(self, _: &T) -> Result<Self::Ok, Self::Error>
+        where
+            T: Display + ?Sized,
+        {
+            todo!()
+        }
+    }
+
+    /// A string serializer used for testing.
+    struct BytesSerializer;
+
+    impl Serializer for BytesSerializer {
+        type Ok = Vec<u8>;
+        type Error = fmt::Error;
+        type SerializeSeq = Impossible<Vec<u8>, fmt::Error>;
+        type SerializeTuple = Impossible<Vec<u8>, fmt::Error>;
+        type SerializeTupleStruct = Impossible<Vec<u8>, fmt::Error>;
+        type SerializeTupleVariant = Impossible<Vec<u8>, fmt::Error>;
+        type SerializeMap = Impossible<Vec<u8>, fmt::Error>;
+        type SerializeStruct = Impossible<Vec<u8>, fmt::Error>;
+        type SerializeStructVariant = Impossible<Vec<u8>, fmt::Error>;
+        fn serialize_bool(self, _: bool) -> Result<Self::Ok, Self::Error> {
+            unimplemented!()
+        }
+        fn serialize_i8(self, _: i8) -> Result<Self::Ok, Self::Error> {
+            unimplemented!()
+        }
+        fn serialize_i16(self, _: i16) -> Result<Self::Ok, Self::Error> {
+            unimplemented!()
+        }
+        fn serialize_i32(self, _: i32) -> Result<Self::Ok, Self::Error> {
+            unimplemented!()
+        }
+        fn serialize_i64(self, _: i64) -> Result<Self::Ok, Self::Error> {
+            unimplemented!()
+        }
+        fn serialize_u8(self, _: u8) -> Result<Self::Ok, Self::Error> {
+            unimplemented!()
+        }
+        fn serialize_u16(self, _: u16) -> Result<Self::Ok, Self::Error> {
+            unimplemented!()
+        }
+        fn serialize_u32(self, _: u32) -> Result<Self::Ok, Self::Error> {
+            unimplemented!()
+        }
+        fn serialize_u64(self, _: u64) -> Result<Self::Ok, Self::Error> {
+            unimplemented!()
+        }
+        fn serialize_f32(self, _: f32) -> Result<Self::Ok, Self::Error> {
+            unimplemented!()
+        }
+        fn serialize_f64(self, _: f64) -> Result<Self::Ok, Self::Error> {
+            unimplemented!()
+        }
+        fn serialize_char(self, _: char) -> Result<Self::Ok, Self::Error> {
+            unimplemented!()
+        }
+        fn serialize_str(self, _: &str) -> Result<Self::Ok, Self::Error> {
+            unimplemented!()
+        }
+        fn serialize_bytes(self, v: &[u8]) -> Result<Self::Ok, Self::Error> {
+            Ok(v.to_vec())
         }
         fn serialize_none(self) -> Result<Self::Ok, Self::Error> {
             unimplemented!()
