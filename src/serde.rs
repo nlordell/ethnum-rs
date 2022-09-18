@@ -297,25 +297,26 @@ pub mod permissive {
     }
 }
 
-/// Module for use with `#[serde(with = "ethnum::serde::binary")]` to
-/// specify little endian binary serialization for 256-bit integer types.
-pub mod binary {
+/// Module for use with `#[serde(with = "ethnum::serde::bytes")]` to
+/// specify little endian byte serialization for 256-bit integer types.
+pub mod bytes {
     use crate::{I256, U256};
-    use core::convert::TryInto;
-    use core::fmt::{self, Formatter};
-    use core::marker::PhantomData;
+    use core::{
+        fmt::{self, Formatter},
+        marker::PhantomData,
+    };
     use serde::{
         de::{self, Deserializer, Visitor},
         Serializer,
     };
 
     #[doc(hidden)]
-    pub trait Binary: Sized + Copy {
+    pub trait Bytes: Sized + Copy {
         fn to_bytes(self) -> [u8; 32];
         fn from_bytes(bytes: [u8; 32]) -> Self;
     }
 
-    impl Binary for I256 {
+    impl Bytes for I256 {
         fn to_bytes(self) -> [u8; 32] {
             self.to_le_bytes()
         }
@@ -325,7 +326,7 @@ pub mod binary {
         }
     }
 
-    impl Binary for U256 {
+    impl Bytes for U256 {
         fn to_bytes(self) -> [u8; 32] {
             self.to_le_bytes()
         }
@@ -338,18 +339,18 @@ pub mod binary {
     #[doc(hidden)]
     pub fn serialize<T, S>(value: &T, serializer: S) -> Result<S::Ok, S::Error>
     where
-        T: Binary,
+        T: Bytes,
         S: Serializer,
     {
         let bytes = value.to_bytes();
         serializer.serialize_bytes(&bytes)
     }
 
-    struct BinaryVisitor<T>(PhantomData<T>);
+    struct BytesVisitor<T>(PhantomData<T>);
 
-    impl<'de, T> Visitor<'de> for BinaryVisitor<T>
+    impl<'de, T> Visitor<'de> for BytesVisitor<T>
     where
-        T: Binary,
+        T: Bytes,
     {
         type Value = T;
 
@@ -372,10 +373,102 @@ pub mod binary {
     #[doc(hidden)]
     pub fn deserialize<'de, T, D>(deserializer: D) -> Result<T, D::Error>
     where
-        T: Binary,
+        T: Bytes,
         D: Deserializer<'de>,
     {
-        deserializer.deserialize_bytes(BinaryVisitor(PhantomData))
+        deserializer.deserialize_bytes(BytesVisitor(PhantomData))
+    }
+}
+
+/// Module for use with `#[serde(with = "ethnum::serde::compressed_bytes")]` to
+/// specify compressed little endian byte serialization for 256-bit integer
+/// types. This will serialize integer types with as few bytes as possible.
+pub mod compressed_bytes {
+    use super::bytes::Bytes;
+    use crate::{I256, U256};
+    use core::{
+        fmt::{self, Formatter},
+        marker::PhantomData,
+    };
+    use serde::{
+        de::{self, Deserializer, Visitor},
+        Serializer,
+    };
+
+    #[doc(hidden)]
+    pub trait CompressedBytes: Bytes {
+        fn leading_bits(&self) -> u32;
+        fn extend(msb: u8) -> u8;
+    }
+
+    impl CompressedBytes for I256 {
+        fn leading_bits(&self) -> u32 {
+            match self.is_negative() {
+                true => self.leading_ones() - 1,
+                false => self.leading_zeros(),
+            }
+        }
+
+        fn extend(msb: u8) -> u8 {
+            ((msb as i8) >> 7) as _
+        }
+    }
+
+    impl CompressedBytes for U256 {
+        fn leading_bits(&self) -> u32 {
+            self.leading_zeros()
+        }
+
+        fn extend(_: u8) -> u8 {
+            0
+        }
+    }
+
+    #[doc(hidden)]
+    pub fn serialize<T, S>(value: &T, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        T: CompressedBytes,
+        S: Serializer,
+    {
+        let bytes = value.to_bytes();
+        let end = bytes.len() - (value.leading_bits() as usize) / 8;
+        serializer.serialize_bytes(&bytes[..end])
+    }
+
+    struct CompressedBytesVisitor<T>(PhantomData<T>);
+
+    impl<'de, T> Visitor<'de> for CompressedBytesVisitor<T>
+    where
+        T: CompressedBytes,
+    {
+        type Value = T;
+
+        fn expecting(&self, f: &mut Formatter) -> fmt::Result {
+            f.write_str("bytes in little endian")
+        }
+
+        fn visit_bytes<E>(self, v: &[u8]) -> Result<Self::Value, E>
+        where
+            E: de::Error,
+        {
+            let extend = T::extend(v.last().copied().unwrap_or_default());
+            let mut bytes = [extend; 32];
+            bytes
+                .get_mut(..v.len())
+                .ok_or_else(|| E::invalid_length(v.len(), &self))?
+                .copy_from_slice(v);
+
+            Ok(T::from_bytes(bytes))
+        }
+    }
+
+    #[doc(hidden)]
+    pub fn deserialize<'de, T, D>(deserializer: D) -> Result<T, D::Error>
+    where
+        T: CompressedBytes,
+        D: Deserializer<'de>,
+    {
+        deserializer.deserialize_bytes(CompressedBytesVisitor(PhantomData))
     }
 }
 
@@ -545,23 +638,49 @@ mod tests {
         assert_eq!(ser!(prefixed::serialize, I256::new(42)), "0x2a");
         assert_eq!(ser!(permissive::serialize, I256::new(42)), "0x2a");
 
-        assert_eq!(bin_ser!(binary::serialize, U256::ZERO), vec![0_u8; 32]);
-        assert_eq!(bin_ser!(binary::serialize, U256::MAX), vec![0xFF_u8; 32]);
-        assert_eq!(bin_ser!(binary::serialize, U256::new(0x4215)), {
+        assert_eq!(bin_ser!(bytes::serialize, U256::ZERO), vec![0x00; 32]);
+        assert_eq!(bin_ser!(bytes::serialize, U256::MAX), vec![0xff; 32]);
+        assert_eq!(bin_ser!(bytes::serialize, U256::new(0x4215)), {
             let mut v = vec![0x15, 0x42];
             v.resize(32, 0);
             v
         });
 
-        assert_eq!(
-            bin_ser!(binary::serialize, I256::new(-1)),
-            vec![0xFF_u8; 32]
-        );
-        assert_eq!(bin_ser!(binary::serialize, I256::new(-424242)), {
-            let mut v = vec![0xCE, 0x86, 0xF9];
-            v.resize(32, 0xFF);
+        assert_eq!(bin_ser!(bytes::serialize, I256::new(-1)), vec![0xff; 32]);
+        assert_eq!(bin_ser!(bytes::serialize, I256::new(-424242)), {
+            let mut v = vec![0xce, 0x86, 0xf9];
+            v.resize(32, 0xff);
             v
         });
+
+        assert_eq!(bin_ser!(compressed_bytes::serialize, U256::ZERO), vec![]);
+        assert_eq!(
+            bin_ser!(compressed_bytes::serialize, U256::MAX),
+            vec![0xff; 32],
+        );
+        assert_eq!(
+            bin_ser!(compressed_bytes::serialize, U256::new(0x4215)),
+            vec![0x15, 0x42],
+        );
+
+        assert_eq!(bin_ser!(compressed_bytes::serialize, I256::MIN), {
+            let mut v = vec![0; 32];
+            v[31] = 0x80;
+            v
+        });
+        assert_eq!(bin_ser!(compressed_bytes::serialize, I256::ZERO), vec![]);
+        assert_eq!(
+            bin_ser!(compressed_bytes::serialize, I256::new(-1)),
+            vec![0xff],
+        );
+        assert_eq!(
+            bin_ser!(compressed_bytes::serialize, I256::new(-0x8000)),
+            vec![0x00, 0x80],
+        );
+        assert_eq!(
+            bin_ser!(compressed_bytes::serialize, I256::new(-424242)),
+            vec![0xce, 0x86, 0xf9],
+        );
     }
 
     #[test]
@@ -736,32 +855,68 @@ mod tests {
         );
 
         assert_eq!(
-            de!(binary::deserialize::<U256, _>, [0; 32].as_slice()),
+            de!(bytes::deserialize::<U256, _>, [0; 32].as_slice()),
             U256::ZERO
         );
 
         assert_eq!(
-            de!(binary::deserialize::<U256, _>, [0xFF; 32].as_slice()),
+            de!(bytes::deserialize::<U256, _>, [0xff; 32].as_slice()),
             U256::MAX
         );
 
         let forty_two = {
-            let mut v = vec![42];
-            v.resize(32, 0);
+            let mut v = [0; 32];
+            v[0] = 42;
             v
         };
         assert_eq!(
-            de!(binary::deserialize::<U256, _>, forty_two.as_slice()),
+            de!(bytes::deserialize::<U256, _>, forty_two.as_slice()),
             U256::new(42)
         );
 
         assert_eq!(
-            de!(binary::deserialize::<I256, _>, [0; 32].as_slice()),
+            de!(bytes::deserialize::<I256, _>, [0; 32].as_slice()),
             I256::ZERO
         );
 
         assert_eq!(
-            de!(binary::deserialize::<I256, _>, [0xFF; 32].as_slice()),
+            de!(bytes::deserialize::<I256, _>, [0xff; 32].as_slice()),
+            I256::new(-1)
+        );
+
+        assert_eq!(
+            de!(compressed_bytes::deserialize::<U256, _>, [0x00].as_slice()),
+            U256::ZERO
+        );
+
+        assert_eq!(
+            de!(
+                compressed_bytes::deserialize::<U256, _>,
+                [0xff; 32].as_slice()
+            ),
+            U256::MAX
+        );
+
+        assert_eq!(
+            de!(compressed_bytes::deserialize::<U256, _>, [0x2a].as_slice()),
+            U256::new(42)
+        );
+
+        assert_eq!(
+            de!(
+                compressed_bytes::deserialize::<U256, _>,
+                [0xff, 0xff].as_slice()
+            ),
+            U256::new(0xffff),
+        );
+
+        assert_eq!(
+            de!(compressed_bytes::deserialize::<I256, _>, [].as_slice()),
+            I256::ZERO
+        );
+
+        assert_eq!(
+            de!(compressed_bytes::deserialize::<I256, _>, [0xff].as_slice()),
             I256::new(-1)
         );
     }
