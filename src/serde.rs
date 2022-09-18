@@ -416,6 +416,16 @@ pub mod bytes {
     pub mod be {
         endianness!("big"; to_be_bytes, from_be_bytes);
     }
+
+    /// Module for use with `#[serde(with = "ethnum::serde::bytes::ne")]` to
+    /// specify native endian byte serialization for 256-bit integer types.
+    #[cfg(target_endian = "little")]
+    pub use self::le as ne;
+
+    /// Module for use with `#[serde(with = "ethnum::serde::bytes::ne")]` to
+    /// specify native endian byte serialization for 256-bit integer types.
+    #[cfg(target_endian = "big")]
+    pub use self::be as ne;
 }
 
 /// Serde compressed byte serialization for 256-bit integer types.
@@ -532,6 +542,20 @@ pub mod compressed_bytes {
     pub mod be {
         endianness!("big"; be, |l| { l.. }, |l| { 32 - l.. });
     }
+
+    /// Module for `#[serde(with = "ethnum::serde::compressed_bytes::ne")]`
+    /// to specify compressed native endian byte serialization for 256-bit
+    /// integer types. This will serialize integer types with as few bytes as
+    /// possible.
+    #[cfg(target_endian = "little")]
+    pub use self::le as ne;
+
+    /// Module for `#[serde(with = "ethnum::serde::compressed_bytes::ne")]`
+    /// to specify compressed native endian byte serialization for 256-bit
+    /// integer types. This will serialize integer types with as few bytes as
+    /// possible.
+    #[cfg(target_endian = "big")]
+    pub use self::be as ne;
 }
 
 /// Internal visitor struct implementation to facilitate implementing different
