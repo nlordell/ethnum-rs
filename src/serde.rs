@@ -8,7 +8,26 @@
 //! Note that this module contains alternative serialization schemes that can
 //! be used with `#[serde(with = "...")]`.
 //!
-//! TODO(nlordell): example!
+//! # Examples
+//!
+//! Basic usage:
+//!
+//! ```text
+//! #[derive(Deserialize, Serialize)]
+//! struct Example {
+//!     a: U256, // "0x2a"
+//!     #[serde(with = "ethnum::serde::decimal")]
+//!     b: I256, // "-42"
+//!     #[serde(with = "ethnum::serde::prefixed")]
+//!     c: U256, // "0x2a" or "42"
+//!     #[serde(with = "ethnum::serde::permissive")]
+//!     d: I256, // "-0x2a" or "-42" or -42
+//!     #[serde(with = "ethnum::serde::bytes")]
+//!     e: U256, // [0x2a, 0x00, ..., 0x00]
+//!     #[serde(with = "ethnum::serde::compressed_bytes")]
+//!     f: I256, // [0xd6]
+//! }
+//! ```
 
 use crate::{int::I256, uint::U256};
 use core::{
@@ -1092,7 +1111,7 @@ mod tests {
         where
             T: Display + ?Sized,
         {
-            todo!()
+            unimplemented!()
         }
     }
 
@@ -1241,7 +1260,7 @@ mod tests {
         where
             T: Display + ?Sized,
         {
-            todo!()
+            unimplemented!()
         }
     }
 }

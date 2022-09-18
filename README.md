@@ -14,6 +14,45 @@ ethnum = "1"
 
 The API follows the Rust `{i,u}N` primitive types as close as possible.
 
+## Features
+
+### `macros`:
+
+The `macros` feature adds 256-bit integer literal support. This allows you to
+specify 256-bit signed and unsigned integer literals (that can, for example, be
+used as `const`s) that are larger than the largest native integer literal
+(`i128::MIN` and `i128::MAX` for signed integers and `u128::MAX` for unsigned
+integers).
+
+```toml
+ethnum = { version = "1", features = ["macros"] }
+```
+
+And then:
+
+```rust
+int!("-57896044618658097711785492504343953926634992332820282019728792003956564819968");
+int!("57896044618658097711785492504343953926634992332820282019728792003956564819967");
+uint!("115792089237316195423570985008687907853269984665640564039457584007913129639935");
+```
+
+Note that these literals support prefixes (`0b` for binary, `0o` for octal, and
+`0x` for hexadecimal) as well as `_` and whitespace separators:
+
+```rust
+int!("-0b1010101010101010101010101010101010101010101010101010101010101010
+         0101010101010101010101010101010101010101010101010101010101010101");
+int!("0o 0123 4567");
+uint!("0xffff_ffff");
+```
+
+### `serde`
+
+The `serde` feature adds support for `serde` serialization and deserialization.
+By default, the 256-bit integer types are serialized as prefixed hexadecimal
+strings. Various serialization helpers are also provided for more fine-grained
+control over how serialization is performed.
+
 ## Intrinsics
 
 The 256-bit integers uses intrinsics based on two implementations:

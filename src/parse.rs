@@ -67,6 +67,9 @@ pub(crate) fn from_str_radix<T: FromStrRadixHelper>(
             .ok_or(pie(InvalidDigit))?,
         None => prefixed_digits,
     };
+    if digits.is_empty() {
+        return Err(pie(InvalidDigit));
+    }
 
     let mut result = T::from_u32(0);
 

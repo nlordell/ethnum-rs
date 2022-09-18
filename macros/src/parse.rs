@@ -179,6 +179,7 @@ fn from_literal<T: FromLiteral>(src: &str) -> Result<T, LiteralError> {
     };
 
     let mut result = T::default();
+    let mut empty = true;
     for &c in digits {
         if c == b'_' || c.is_ascii_whitespace() {
             // Allow separators and inner-whitespace
@@ -192,6 +193,11 @@ fn from_literal<T: FromLiteral>(src: &str) -> Result<T, LiteralError> {
             .mul_radix(radix)
             .and_then(|r| op(&r, x))
             .ok_or(overflow_err)?;
+        empty = false;
+    }
+
+    if empty {
+        return Err(LiteralError::InvalidDigit);
     }
 
     Ok(result)
@@ -379,6 +385,49 @@ mod tests {
             assert!(matches!(
                 Uint::from_literal(s).unwrap_err(),
                 LiteralError::PosOverflow,
+            ));
+        }
+    }
+
+    #[test]
+    fn separators() {
+        assert_eq!(
+            Int::from_literal(
+                "0b0000000000000000000000000000000000000000000000000000000000000000
+                   1010101010101010101010101010101010101010101010101010101010101010
+                   0000000000000000000000000000000000000000000000000000000000000000
+                   0101010101010101010101010101010101010101010101010101010101010101"
+            )
+            .unwrap(),
+            Int {
+                hi: 0b1010101010101010101010101010101010101010101010101010101010101010,
+                lo: 0b0101010101010101010101010101010101010101010101010101010101010101,
+            }
+        );
+
+        assert_eq!(
+            Int::from_literal("0o 0123 4567").unwrap(),
+            Int {
+                hi: 0,
+                lo: 0o_0123_4567,
+            }
+        );
+
+        assert_eq!(
+            Int::from_literal("0xffff_ffff").unwrap(),
+            Int {
+                hi: 0,
+                lo: 0xffff_ffff,
+            }
+        );
+    }
+
+    #[test]
+    fn empty_with_separators() {
+        for s in ["-", "0b _ _", "+_"] {
+            assert!(matches!(
+                Int::from_literal(s).unwrap_err(),
+                LiteralError::InvalidDigit,
             ));
         }
     }
