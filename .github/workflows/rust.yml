@@ -31,5 +31,5 @@ jobs:
     - name: Test Additional Features
       run: |
         cargo clippy --features serde --all-targets -- -D warnings
-        cargo test --features serde
-        cargo test --features serde --release
+        cargo test --features macros,serde
+        cargo test --features macros,serde --release

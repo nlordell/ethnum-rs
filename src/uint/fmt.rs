@@ -12,11 +12,6 @@ mod tests {
     use alloc::format;
 
     #[test]
-    fn from_str() {
-        assert_eq!("42".parse::<U256>().unwrap(), 42);
-    }
-
-    #[test]
     fn debug() {
         assert_eq!(
             format!("{:?}", U256::MAX),

@@ -2,7 +2,7 @@
 //! standard library API for `uN` types.
 
 use super::U256;
-use crate::{fmt, intrinsics};
+use crate::intrinsics;
 use core::{
     mem::{self, MaybeUninit},
     num::ParseIntError,
@@ -70,7 +70,7 @@ impl U256 {
     /// ```
     #[inline]
     pub fn from_str_radix(src: &str, radix: u32) -> Result<Self, ParseIntError> {
-        fmt::from_str_radix(src, radix, None)
+        crate::parse::from_str_radix(src, radix, None)
     }
 
     /// Returns the number of ones in the binary representation of `self`.

@@ -6,6 +6,7 @@ mod convert;
 mod fmt;
 mod iter;
 mod ops;
+mod parse;
 
 pub use self::convert::AsI256;
 use crate::uint::U256;
@@ -129,7 +130,7 @@ impl I256 {
     /// assert_eq!(I256::from_str_hex("-0xa"), Ok(I256::new(-10)));
     /// ```
     pub fn from_str_hex(src: &str) -> Result<Self, ParseIntError> {
-        crate::fmt::from_str_radix(src, 16, Some("0x"))
+        crate::parse::from_str_radix(src, 16, Some("0x"))
     }
 
     /// Converts a prefixed string slice in a base determined by the prefix to
@@ -153,7 +154,7 @@ impl I256 {
     /// assert_eq!(I256::from_str_prefixed("-0xa"), Ok(I256::new(-10)));
     /// ```
     pub fn from_str_prefixed(src: &str) -> Result<Self, ParseIntError> {
-        crate::fmt::from_str_prefixed(src)
+        crate::parse::from_str_prefixed(src)
     }
 
     /// Cast to a primitive `i8`.
