@@ -1111,6 +1111,28 @@ impl U256 {
         (unsafe { result.assume_init() }, overflow)
     }
 
+    /// Computes the absolute difference between `self` and `other`.
+    ///
+    /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    /// ```
+    /// # use ethnum::U256;
+    /// assert_eq!(U256::new(100).abs_diff(U256::new(80)), 20);
+    /// assert_eq!(U256::new(100).abs_diff(U256::new(110)), 10);
+    /// ```
+    #[must_use = "this returns the result of the operation, \
+                  without modifying the original"]
+    #[inline]
+    pub fn abs_diff(self, other: Self) -> Self {
+        if self < other {
+            other - self
+        } else {
+            self - other
+        }
+    }
+
     /// Calculates the multiplication of `self` and `rhs`.
     ///
     /// Returns a tuple of the multiplication along with a boolean indicating

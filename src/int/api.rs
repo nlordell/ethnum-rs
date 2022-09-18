@@ -1303,6 +1303,48 @@ impl I256 {
         (unsafe { result.assume_init() }, overflow)
     }
 
+    /// Computes the absolute difference between `self` and `other`.
+    ///
+    /// This function always returns the correct answer without overflow or
+    /// panics by returning an unsigned integer.
+    ///
+    /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    /// ```
+    /// # use ethnum::{I256, U256};
+    /// assert_eq!(I256::new(100).abs_diff(I256::new(80)), 20);
+    /// assert_eq!(I256::new(100).abs_diff(I256::new(110)), 10);
+    /// assert_eq!(I256::new(-100).abs_diff(I256::new(80)), 180);
+    /// assert_eq!(I256::new(-100).abs_diff(I256::new(-120)), 20);
+    /// assert_eq!(I256::MIN.abs_diff(I256::MAX), U256::MAX);
+    /// assert_eq!(I256::MAX.abs_diff(I256::MIN), U256::MAX);
+    /// ```
+    #[must_use = "this returns the result of the operation, \
+                  without modifying the original"]
+    #[inline]
+    pub fn abs_diff(self, other: Self) -> U256 {
+        if self < other {
+            // Converting a non-negative x from signed to unsigned by using
+            // `x as U` is left unchanged, but a negative x is converted
+            // to value x + 2^N. Thus if `s` and `o` are binary variables
+            // respectively indicating whether `self` and `other` are
+            // negative, we are computing the mathematical value:
+            //
+            //    (other + o*2^N) - (self + s*2^N)    mod  2^N
+            //    other - self + (o-s)*2^N            mod  2^N
+            //    other - self                        mod  2^N
+            //
+            // Finally, taking the mod 2^N of the mathematical value of
+            // `other - self` does not change it as it already is
+            // in the range [0, 2^N).
+            other.as_u256().wrapping_sub(self.as_u256())
+        } else {
+            self.as_u256().wrapping_sub(other.as_u256())
+        }
+    }
+
     /// Calculates the multiplication of `self` and `rhs`.
     ///
     /// Returns a tuple of the multiplication along with a boolean indicating
