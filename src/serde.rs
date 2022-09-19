@@ -419,13 +419,15 @@ pub mod bytes {
 
     /// Module for use with `#[serde(with = "ethnum::serde::bytes::ne")]` to
     /// specify native endian byte serialization for 256-bit integer types.
-    #[cfg(target_endian = "little")]
-    pub use self::le as ne;
+    pub mod ne {
+        #[cfg(target_endian = "little")]
+        #[doc(hidden)]
+        pub use super::le::{deserialize, serialize};
 
-    /// Module for use with `#[serde(with = "ethnum::serde::bytes::ne")]` to
-    /// specify native endian byte serialization for 256-bit integer types.
-    #[cfg(target_endian = "big")]
-    pub use self::be as ne;
+        #[cfg(target_endian = "big")]
+        #[doc(hidden)]
+        pub use super::be::{deserialize, serialize};
+    }
 }
 
 /// Serde compressed byte serialization for 256-bit integer types.
@@ -547,15 +549,15 @@ pub mod compressed_bytes {
     /// to specify compressed native endian byte serialization for 256-bit
     /// integer types. This will serialize integer types with as few bytes as
     /// possible.
-    #[cfg(target_endian = "little")]
-    pub use self::le as ne;
+    pub mod ne {
+        #[cfg(target_endian = "little")]
+        #[doc(hidden)]
+        pub use super::le::{deserialize, serialize};
 
-    /// Module for `#[serde(with = "ethnum::serde::compressed_bytes::ne")]`
-    /// to specify compressed native endian byte serialization for 256-bit
-    /// integer types. This will serialize integer types with as few bytes as
-    /// possible.
-    #[cfg(target_endian = "big")]
-    pub use self::be as ne;
+        #[cfg(target_endian = "big")]
+        #[doc(hidden)]
+        pub use super::be::{deserialize, serialize};
+    }
 }
 
 /// Internal visitor struct implementation to facilitate implementing different
