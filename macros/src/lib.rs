@@ -28,33 +28,33 @@ pub fn uint(input: TokenStream) -> TokenStream {
     }
 }
 
-struct IntLiteral(Int);
+struct IntLiteral(Int, String);
 
 impl IntLiteral {
     fn generate(input: TokenStream) -> Result<Self, CompileError> {
         let input = Input::parse(input)?;
-        Ok(Self(Int::from_literal(&input.value)?))
+        Ok(Self(Int::from_literal(&input.value)?, input.crate_name))
     }
 
     fn into_tokens(self) -> TokenStream {
         let (hi, lo) = self.0.into_words();
-        format!("::ethnum::I256::from_words({hi}, {lo})")
+        format!("{}::I256::from_words({hi}, {lo})", self.1)
             .parse()
             .unwrap()
     }
 }
 
-struct UintLiteral(Uint);
+struct UintLiteral(Uint, String);
 
 impl UintLiteral {
     fn generate(input: TokenStream) -> Result<Self, CompileError> {
         let input = Input::parse(input)?;
-        Ok(Self(Uint::from_literal(&input.value)?))
+        Ok(Self(Uint::from_literal(&input.value)?, input.crate_name))
     }
 
     fn into_tokens(self) -> TokenStream {
         let (hi, lo) = self.0.into_words();
-        format!("::ethnum::U256::from_words({hi}, {lo})")
+        format!("{}::U256::from_words({hi}, {lo})", self.1)
             .parse()
             .unwrap()
     }
@@ -63,6 +63,7 @@ impl UintLiteral {
 struct Input {
     value: String,
     span: Span,
+    crate_name: String,
 }
 
 impl Input {
@@ -70,6 +71,7 @@ impl Input {
         let mut result = Input {
             value: String::new(),
             span: Span::call_site(),
+            crate_name: "::ethnum".to_owned(),
         };
         ParserState::start().input(input, &mut result)?.end()?;
 
@@ -79,6 +81,10 @@ impl Input {
 
 enum ParserState {
     String,
+    CommaOrEof,
+    Crate,
+    EqualCrateName,
+    CrateName,
     Eof,
 }
 
@@ -108,6 +114,21 @@ impl ParserState {
                 Some(value) => {
                     result.value = value;
                     result.span = token.span();
+                    Ok(Self::CommaOrEof)
+                }
+                None => Err(self.unexpected(Some(token))),
+            },
+
+            (Self::CommaOrEof, TokenTree::Punct(p)) if p.as_char() == ',' => Ok(Self::Crate),
+            (Self::Crate, TokenTree::Ident(c)) if c.to_string() == "crate" => {
+                Ok(Self::EqualCrateName)
+            }
+            (Self::EqualCrateName, TokenTree::Punct(p)) if p.as_char() == '=' => {
+                Ok(Self::CrateName)
+            }
+            (Self::CrateName, TokenTree::Literal(l)) => match parse_string(l) {
+                Some(value) => {
+                    result.crate_name = value;
                     Ok(Self::Eof)
                 }
                 None => Err(self.unexpected(Some(token))),
@@ -119,15 +140,19 @@ impl ParserState {
 
     fn end(self) -> Result<(), CompileError> {
         match self {
-            ParserState::Eof => Ok(()),
+            Self::CommaOrEof | Self::Eof => Ok(()),
             _ => Err(self.unexpected(None)),
         }
     }
 
     fn unexpected(self, token: Option<TokenTree>) -> CompileError {
         let expected = match self {
-            ParserState::String => "string literal",
-            ParserState::Eof => "<eof>",
+            Self::String => "string literal",
+            Self::CommaOrEof => "`,` or <eof>",
+            Self::Crate => "`crate` identifier",
+            Self::EqualCrateName => "`=`",
+            Self::CrateName => "crate name string literal",
+            Self::Eof => "<eof>",
         };
         let (value, span) = match token {
             Some(TokenTree::Group(g)) => {

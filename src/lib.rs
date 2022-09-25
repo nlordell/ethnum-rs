@@ -65,7 +65,13 @@ mod uint;
 /// assert_eq!(int!("-0o52"), -42);
 /// ```
 #[cfg(feature = "macros")]
-pub use ethnum_macros::int;
+#[macro_export]
+macro_rules! int {
+    ($integer:literal) => {{
+        use $crate::internal;
+        internal::int!($integer, crate = "internal")
+    }};
+}
 
 /// Macro for 256-bit unsigned integer literal.
 ///
@@ -102,7 +108,26 @@ pub use ethnum_macros::int;
 /// assert_eq!(uint!("0o52"), 42);
 /// ```
 #[cfg(feature = "macros")]
-pub use ethnum_macros::uint;
+#[macro_export]
+macro_rules! uint {
+    ($integer:literal) => {{
+        use $crate::internal;
+        internal::uint!($integer, crate = "internal")
+    }};
+}
+
+/// Module containing required re-exports for macros.
+///
+/// This "trick" allows us to export declarative macros that wrap the inner
+/// procedural macro implementations, without requiring the `ethnum` crate to
+/// be available in the invocation context. This means that the macros continue
+/// to work even when the crate is renamed, or the macro is re-exported.
+#[cfg(feature = "macros")]
+#[doc(hidden)]
+pub mod internal {
+    pub use super::{I256, U256};
+    pub use ethnum_macros::{int, uint};
+}
 
 /// Convenience re-export of 256-integer types and as- conversion traits.
 pub mod prelude {
