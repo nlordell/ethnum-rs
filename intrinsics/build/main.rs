@@ -22,9 +22,9 @@ fn main() -> Result<(), Box<dyn Error>> {
         Command::new(env::var("RUSTC")?)
             .arg("build/intrinsics.rs")
             .arg("-O")
-            .args(&["--crate-type", "lib"])
-            .args(&["--emit", "llvm-ir"])
-            .args(&["--target", &env::var("TARGET")?])
+            .args(["--crate-type", "lib"])
+            .args(["--emit", "llvm-ir"])
+            .args(["--target", &env::var("TARGET")?])
             .arg("-o")
             .arg(&path)
             .status()?;
