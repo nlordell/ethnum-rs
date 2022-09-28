@@ -7,7 +7,7 @@
 #![deny(missing_docs)]
 #![no_std]
 
-#[cfg(test)]
+#[cfg(any(test, feature = "alloc"))]
 extern crate alloc;
 
 #[macro_use]
@@ -26,6 +26,7 @@ mod macros {
 
 mod error;
 mod fmt;
+mod impls;
 mod int;
 pub mod intrinsics;
 mod parse;

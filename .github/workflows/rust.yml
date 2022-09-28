@@ -19,6 +19,10 @@ jobs:
       run: |
         cargo fmt --all -- --check
         cargo clippy --workspace --all-targets -- -D warnings
+    - name: Cargo hack
+      run: |
+        cargo install -f cargo-hack
+        cargo hack clippy --workspace --ignore-private --each-feature --no-dev-deps
     - name: Test Native Intrinsics
       run: |
         cargo test
