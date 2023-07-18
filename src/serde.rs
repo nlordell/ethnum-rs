@@ -392,6 +392,19 @@ pub mod bytes {
 
                     Ok(T::from_bytes(bytes))
                 }
+
+                fn visit_seq<S>(self, mut seq: S) -> Result<Self::Value, S::Error>
+                where
+                    S: de::SeqAccess<'de>,
+                {
+                    let mut bytes: [u8; 32] = [0; 32];
+                    for i in 0..32 {
+                        bytes[i] = seq
+                            .next_element()?
+                            .ok_or(de::Error::invalid_length(i, &self))?;
+                    }
+                    Ok(T::from_bytes(bytes))
+                }
             }
 
             #[doc(hidden)]
