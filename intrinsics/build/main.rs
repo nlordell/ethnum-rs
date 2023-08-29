@@ -15,6 +15,11 @@ use cc::Build;
 use std::{env, error::Error, fs, path::PathBuf, process::Command};
 
 fn main() -> Result<(), Box<dyn Error>> {
+    println!("cargo:rerun-if-env-changed=CLANG");
+    let clang = env::var("CLANG")
+        .map(PathBuf::from)
+        .unwrap_or_else(|_| "clang".into());
+
     let out_dir = PathBuf::from(env::var("OUT_DIR")?);
 
     let template = {
@@ -35,24 +40,15 @@ fn main() -> Result<(), Box<dyn Error>> {
         let source = template
             .replace("i128", "i256")
             .replace(" 127", " 255")
-            .replace("dereferenceable(16)", "dereferenceable(32)")
-            // TODO(nlordell): Figure out why Clang doesn't like these
-            .replace("mustprogress ", "")
-            .replace("noundef ", "")
-            .replace("memory(argmem: readwrite) ", "")
-            .replace("memory(argmem: read) ", "")
-            .replace("memory(none) ", "")
-            .replace(", !!1", "");
+            .replace("dereferenceable(16)", "dereferenceable(32)");
+
         let path = out_dir.join("intrinsics.ll");
         fs::write(&path, source)?;
         path
     };
 
     let mut build = Build::new();
-    build
-        .compiler("clang")
-        .file(intrinsics_ir_path)
-        .opt_level(3);
+    build.compiler(&clang).file(intrinsics_ir_path).opt_level(3);
 
     let linker_plugin_lto =
         matches!(env::var("RUSTFLAGS"), Ok(flags) if flags.contains("-Clinker-plugin-lto"));

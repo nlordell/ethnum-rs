@@ -99,6 +99,24 @@ in order to actually take advantage of the the optimized assembly:
 RUSTFLAGS="-Clinker-plugin-lto -Clinker=clang -Clink-arg=-fuse-ld=lld" cargo build
 ```
 
+Note that **the `clang` version must match the `rustc` LLVM version**. If not,
+it is possible to encounter errors when running the `ethnum-intrinsics` build
+script. You can verify the LLVM version used by `rustc` with:
+
+```sh
+rustc --version --verbose | grep LLVM
+```
+
+In particular, this affects macOS which ships its own `clang` binary. The
+`ethnum-intrinsics` build script accepts a `CLANG` environment variable to
+specity a specific `clang` executable path to use. Using the major LLVM
+version from the command above:
+
+```
+brew install llvm@${LLVM_VERSION}
+CLANG=/opt/homebrew/opt/llvm@${LLVM_VERSION}/bin/clang cargo build
+```
+
 ### API Stability
 
 The instinsics are exported under `ethnum::intrinsics`. That being said, be

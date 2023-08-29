@@ -25,6 +25,7 @@ jobs:
         cargo test --release
     - name: Test LLVM Intrinsics
       run: |
+        sudo apt update && sudo apt install clang-16
         cargo clippy --features llvm-intrinsics --all-targets -- -D warnings
         cargo test --features llvm-intrinsics
         cargo test --features llvm-intrinsics --release
