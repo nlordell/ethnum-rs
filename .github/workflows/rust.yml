@@ -15,6 +15,11 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
+    - name: Install Clang
+      run: |
+        LLVM_VERSION=$(rustc --version --verbose | sed -n 's/^LLVM version: \([0-9]*\).*$/\1/p')
+        curl -s https://apt.llvm.org/llvm.sh | sudo bash -s -- ${LLVM_VERSION}
+        echo "CLANG=clang-${LLVM_VERSION}" >> ${GITHUB_ENV}
     - name: Lint
       run: |
         cargo fmt --all -- --check
@@ -25,7 +30,6 @@ jobs:
         cargo test --release
     - name: Test LLVM Intrinsics
       run: |
-        sudo apt update && sudo apt install clang-16
         cargo clippy --features llvm-intrinsics --all-targets -- -D warnings
         cargo test --features llvm-intrinsics
         cargo test --features llvm-intrinsics --release
