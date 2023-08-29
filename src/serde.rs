@@ -328,6 +328,7 @@ pub mod bytes {
             use core::{
                 fmt::{self, Formatter},
                 marker::PhantomData,
+                mem::{self, MaybeUninit},
             };
             use serde::{
                 de::{self, Deserializer, Visitor},
@@ -397,12 +398,27 @@ pub mod bytes {
                 where
                     S: de::SeqAccess<'de>,
                 {
-                    let mut bytes: [u8; 32] = [0; 32];
-                    for i in 0..32 {
-                        bytes[i] = seq
-                            .next_element()?
-                            .ok_or(de::Error::invalid_length(i, &self))?;
+                    match seq.size_hint() {
+                        Some(len) if len != 32 => {
+                            return Err(de::Error::invalid_length(len, &self))
+                        }
+                        _ => {}
                     }
+
+                    let mut bytes = [MaybeUninit::<u8>::uninit(); 32];
+                    for i in 0..32 {
+                        bytes[i].write(
+                            seq.next_element()?
+                                .ok_or(de::Error::invalid_length(i, &self))?,
+                        );
+                    }
+                    if seq.next_element::<u8>()?.is_some() {
+                        return Err(de::Error::invalid_length(33, &self));
+                    }
+
+                    // SAFETY: all bytes have been initialized in for loop.
+                    let bytes = unsafe { mem::transmute(bytes) };
+
                     Ok(T::from_bytes(bytes))
                 }
             }
@@ -483,6 +499,7 @@ pub mod compressed_bytes {
             use core::{
                 fmt::{self, Formatter},
                 marker::PhantomData,
+                mem::MaybeUninit,
             };
             use serde::{
                 de::{self, Deserializer, Visitor},
@@ -528,6 +545,36 @@ pub mod compressed_bytes {
                     bytes[index].copy_from_slice(v);
 
                     Ok(T::from_bytes(bytes))
+                }
+
+                fn visit_seq<S>(self, mut seq: S) -> Result<Self::Value, S::Error>
+                where
+                    S: de::SeqAccess<'de>,
+                {
+                    match seq.size_hint() {
+                        Some(len) if len > 32 => return Err(de::Error::invalid_length(len, &self)),
+                        _ => {}
+                    }
+
+                    let mut bytes = [MaybeUninit::<u8>::uninit(); 32];
+                    let mut i = 0;
+                    while i < 32 {
+                        let b = match seq.next_element()? {
+                            Some(b) => b,
+                            None => break,
+                        };
+                        bytes[i].write(b);
+                        i += 1;
+                    }
+                    if i == 32 && seq.next_element::<u8>()?.is_some() {
+                        return Err(de::Error::invalid_length(33, &self));
+                    }
+
+                    // SAFETY: bytes up to `i` have been initialized in while
+                    // loop.
+                    let bytes = unsafe { &*(&bytes[..i] as *const _ as *const _) };
+
+                    self.visit_bytes(bytes)
                 }
             }
 
@@ -859,6 +906,26 @@ mod tests {
             }};
         }
 
+        macro_rules! assert_de_bytes {
+            ($method:expr, $src:expr; eq: $exp:expr) => {{
+                let src = $src;
+                let exp = $exp;
+
+                assert_eq!(de!($method, src.as_slice()), exp);
+
+                let seq =
+                    value::SeqDeserializer::<_, value::Error>::new(src.into_iter());
+                assert_eq!(($method)(seq).unwrap(), exp);
+            }};
+            ($method:expr, $src:expr; err) => {{
+                let src = $src;
+                assert!(de!(err; $method, src.as_slice()));
+                let seq =
+                    value::SeqDeserializer::<_, value::Error>::new(src.into_iter());
+                assert!(($method)(seq).is_err());
+            }};
+        }
+
         assert_eq!(
             de!(
                 I256::deserialize,
@@ -1017,13 +1084,22 @@ mod tests {
             de!(err; permissive::deserialize::<U256, _>, "0x10000000000000000000000000000000000000000000000000000000000000000")
         );
 
-        assert_eq!(
-            de!(bytes::le::deserialize::<U256, _>, [0x00; 32].as_slice()),
-            U256::ZERO
+        assert_de_bytes!(
+            bytes::le::deserialize::<U256, _>, [0x00; 32];
+            eq: U256::ZERO
         );
-        assert_eq!(
-            de!(bytes::le::deserialize::<U256, _>, [0xff; 32].as_slice()),
-            U256::MAX
+        assert_de_bytes!(
+            bytes::le::deserialize::<U256, _>, [0xff; 32];
+            eq: U256::MAX
+        );
+
+        assert_de_bytes!(
+            bytes::le::deserialize::<I256, _>, [0x00; 32];
+            eq: I256::ZERO
+        );
+        assert_de_bytes!(
+            bytes::le::deserialize::<I256, _>, [0xff; 32];
+            eq: I256::new(-1)
         );
 
         let forty_two = {
@@ -1031,26 +1107,48 @@ mod tests {
             v[0] = 0x2a;
             v
         };
-        assert_eq!(
-            de!(bytes::le::deserialize::<U256, _>, forty_two.as_slice()),
-            U256::new(42)
+        assert_de_bytes!(
+            bytes::le::deserialize::<U256, _>, forty_two;
+            eq: U256::new(42)
         );
-        assert_eq!(
-            de!(bytes::le::deserialize::<I256, _>, [0x00; 32].as_slice()),
-            I256::ZERO
-        );
-        assert_eq!(
-            de!(bytes::le::deserialize::<I256, _>, [0xff; 32].as_slice()),
-            I256::new(-1)
+        assert_de_bytes!(
+            bytes::le::deserialize::<I256, _>, forty_two;
+            eq: I256::new(42)
         );
 
-        assert_eq!(
-            de!(bytes::be::deserialize::<U256, _>, [0x00; 32].as_slice()),
-            U256::ZERO
+        assert_de_bytes!(
+            bytes::le::deserialize::<U256, _>, [0xff; 31];
+            err
         );
-        assert_eq!(
-            de!(bytes::be::deserialize::<U256, _>, [0xff; 32].as_slice()),
-            U256::MAX
+        assert_de_bytes!(
+            bytes::le::deserialize::<U256, _>, [0xff; 33];
+            err
+        );
+        assert_de_bytes!(
+            bytes::le::deserialize::<I256, _>, [0xff; 31];
+            err
+        );
+        assert_de_bytes!(
+            bytes::le::deserialize::<I256, _>, [0xff; 33];
+            err
+        );
+
+        assert_de_bytes!(
+            bytes::be::deserialize::<U256, _>, [0x00; 32];
+            eq: U256::ZERO
+        );
+        assert_de_bytes!(
+            bytes::be::deserialize::<U256, _>, [0xff; 32];
+            eq: U256::MAX
+        );
+
+        assert_de_bytes!(
+            bytes::be::deserialize::<I256, _>, [0x00; 32];
+            eq: I256::ZERO
+        );
+        assert_de_bytes!(
+            bytes::be::deserialize::<I256, _>, [0xff; 32];
+            eq: I256::new(-1)
         );
 
         let forty_two = {
@@ -1058,93 +1156,100 @@ mod tests {
             v[31] = 0x2a;
             v
         };
-        assert_eq!(
-            de!(bytes::be::deserialize::<U256, _>, forty_two.as_slice()),
-            U256::new(42)
+        assert_de_bytes!(
+            bytes::be::deserialize::<U256, _>, forty_two;
+            eq: U256::new(42)
         );
-        assert_eq!(
-            de!(bytes::be::deserialize::<I256, _>, [0x00; 32].as_slice()),
-            I256::ZERO
-        );
-        assert_eq!(
-            de!(bytes::be::deserialize::<I256, _>, [0xff; 32].as_slice()),
-            I256::new(-1)
+        assert_de_bytes!(
+            bytes::be::deserialize::<I256, _>, forty_two;
+            eq: I256::new(42)
         );
 
-        assert_eq!(
-            de!(compressed_bytes::le::deserialize::<U256, _>, [].as_slice()),
-            U256::ZERO
+        assert_de_bytes!(
+            bytes::be::deserialize::<U256, _>, [0xff; 31];
+            err
         );
-        assert_eq!(
-            de!(
-                compressed_bytes::le::deserialize::<U256, _>,
-                [0xff; 32].as_slice()
-            ),
-            U256::MAX
+        assert_de_bytes!(
+            bytes::be::deserialize::<U256, _>, [0xff; 33];
+            err
         );
-
-        assert_eq!(
-            de!(
-                compressed_bytes::le::deserialize::<U256, _>,
-                [0x2a].as_slice()
-            ),
-            U256::new(42)
+        assert_de_bytes!(
+            bytes::be::deserialize::<I256, _>, [0xff; 31];
+            err
         );
-        assert_eq!(
-            de!(
-                compressed_bytes::le::deserialize::<U256, _>,
-                [0xee, 0xff].as_slice()
-            ),
-            U256::new(0xffee),
-        );
-        assert_eq!(
-            de!(compressed_bytes::le::deserialize::<I256, _>, [].as_slice()),
-            I256::ZERO
-        );
-        assert_eq!(
-            de!(
-                compressed_bytes::le::deserialize::<I256, _>,
-                [0xff].as_slice()
-            ),
-            I256::new(-1)
+        assert_de_bytes!(
+            bytes::be::deserialize::<I256, _>, [0xff; 33];
+            err
         );
 
-        assert_eq!(
-            de!(compressed_bytes::be::deserialize::<U256, _>, [].as_slice()),
-            U256::ZERO
+        assert_de_bytes!(
+            compressed_bytes::le::deserialize::<U256, _>, [];
+            eq: U256::ZERO
         );
-        assert_eq!(
-            de!(
-                compressed_bytes::be::deserialize::<U256, _>,
-                [0xff; 32].as_slice()
-            ),
-            U256::MAX
+        assert_de_bytes!(
+            compressed_bytes::le::deserialize::<U256, _>, [0xff; 32];
+            eq: U256::MAX
         );
 
-        assert_eq!(
-            de!(
-                compressed_bytes::be::deserialize::<U256, _>,
-                [0x2a].as_slice()
-            ),
-            U256::new(42)
+        assert_de_bytes!(
+            compressed_bytes::le::deserialize::<U256, _>, [0x2a];
+            eq: U256::new(42)
         );
-        assert_eq!(
-            de!(
-                compressed_bytes::be::deserialize::<U256, _>,
-                [0xff, 0xee].as_slice()
-            ),
-            U256::new(0xffee),
+        assert_de_bytes!(
+            compressed_bytes::le::deserialize::<U256, _>, [0xee, 0xff];
+            eq: U256::new(0xffee)
         );
-        assert_eq!(
-            de!(compressed_bytes::be::deserialize::<I256, _>, [].as_slice()),
-            I256::ZERO
+        assert_de_bytes!(
+            compressed_bytes::le::deserialize::<I256, _>, [];
+            eq: I256::ZERO
         );
-        assert_eq!(
-            de!(
-                compressed_bytes::be::deserialize::<I256, _>,
-                [0xff].as_slice()
-            ),
-            I256::new(-1)
+        assert_de_bytes!(
+            compressed_bytes::le::deserialize::<I256, _>, [0xff];
+            eq: I256::new(-1)
+        );
+
+        assert_de_bytes!(
+            compressed_bytes::le::deserialize::<U256, _>, [0xff; 33];
+            err
+        );
+        assert_de_bytes!(
+            compressed_bytes::le::deserialize::<I256, _>, [0xff; 33];
+            err
+        );
+
+        assert_de_bytes!(
+            compressed_bytes::be::deserialize::<U256, _>, [];
+            eq: U256::ZERO
+        );
+        assert_de_bytes!(
+            compressed_bytes::be::deserialize::<U256, _>, [0xff; 32];
+            eq: U256::MAX
+        );
+
+        assert_de_bytes!(
+            compressed_bytes::be::deserialize::<U256, _>, [0x2a];
+            eq: U256::new(42)
+        );
+        assert_de_bytes!(
+            compressed_bytes::be::deserialize::<U256, _>, [0xff, 0xee];
+            eq: U256::new(0xffee)
+        );
+        assert_de_bytes!(
+            compressed_bytes::be::deserialize::<I256, _>, [];
+            eq: I256::ZERO
+        );
+        assert_de_bytes!(
+            compressed_bytes::be::deserialize::<I256, _>, [0xfe];
+            eq: I256::new(-2)
+        );
+
+        assert_de_bytes!(
+            compressed_bytes::be::deserialize::<U256, _>, [0xff; 33];
+            err
+        );
+        assert_de_bytes!(
+            compressed_bytes::be::deserialize::<I256, _>, [0xff; 33];
+            err
         );
     }
 
