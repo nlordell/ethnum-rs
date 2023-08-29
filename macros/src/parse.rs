@@ -115,10 +115,7 @@ impl FromLiteral for Uint {
 
     fn mul_radix(&self, radix: u32) -> Option<Self> {
         let radix = radix as u128;
-        let (lh, ll) = (
-            (self.lo >> 64) as u128,
-            (self.lo & (u64::MAX as u128)) as u128,
-        );
+        let (lh, ll) = (self.lo >> 64, self.lo & (u64::MAX as u128));
 
         let llx = ll * radix;
         let lhx = lh * radix;

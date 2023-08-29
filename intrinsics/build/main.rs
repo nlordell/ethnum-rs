@@ -38,7 +38,11 @@ fn main() -> Result<(), Box<dyn Error>> {
             .replace("dereferenceable(16)", "dereferenceable(32)")
             // TODO(nlordell): Figure out why Clang doesn't like these
             .replace("mustprogress ", "")
-            .replace("noundef ", "");
+            .replace("noundef ", "")
+            .replace("memory(argmem: readwrite) ", "")
+            .replace("memory(argmem: read) ", "")
+            .replace("memory(none) ", "")
+            .replace(", !!1", "");
         let path = out_dir.join("intrinsics.ll");
         fs::write(&path, source)?;
         path

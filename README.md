@@ -136,7 +136,7 @@ as a reference.
 In order to start fuzzing:
 
 ```sh
-cargo install afl
+cargo install --force cargo-afl
 cargo run -p ethnum-fuzz --bin init target/fuzz
 cargo afl build -p ethnum-fuzz --bin fuzz
 cargo afl fuzz -i target/fuzz/in -o target/fuzz/out target/debug/fuzz

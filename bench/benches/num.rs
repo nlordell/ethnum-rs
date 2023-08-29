@@ -1,18 +1,30 @@
 use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion};
-#[cfg(not(feature = "primitive-types"))]
+#[cfg(not(any(feature = "primitive-types", feature = "ruint")))]
 use ethnum::U256;
 #[cfg(feature = "primitive-types")]
 use primitive_types::U256;
+#[cfg(feature = "ruint")]
+use ruint::aliases::U256;
+
+#[cfg(not(feature = "ruint"))]
+type Shift = u32;
+#[cfg(feature = "ruint")]
+type Shift = usize;
+
+#[inline(always)]
+const fn sh(n: Shift) -> Shift {
+    n
+}
 
 fn arithmetic(c: &mut Criterion) {
     let nums = [
-        (U256::from(0x00017eb02a11f4a9443abc5058e1c2c2_u128) << 128_u32)
+        (U256::from(0x00017eb02a11f4a9443abc5058e1c2c2_u128) << sh(128))
             + U256::from(0x3540ba08c848a6eb3a1e1415b0000000_u128),
-        (U256::from(0x0000000007a5c694c4fb15944398653f_u128) << 128_u32)
+        (U256::from(0x0000000007a5c694c4fb15944398653f_u128) << sh(128))
             + U256::from(0x724f5c482676cba8ea4e698d75210fe0_u128),
-        (U256::from(0x0000000000000000024e9ffa7e0bba23_u128) << 128_u32)
+        (U256::from(0x0000000000000000024e9ffa7e0bba23_u128) << sh(128))
             + U256::from(0x451a0df036962a5b327f93054732380a_u128),
-        (U256::from(0x0000000000000000000000000647a49c_u128) << 128_u32)
+        (U256::from(0x0000000000000000000000000647a49c_u128) << sh(128))
             + U256::from(0xf1055ae531427db60296077b1863d256_u128),
         U256::from(0x000f4187ab979b49ad893d525a13a5aa_u128),
         U256::from(0x000000000edac72a3447ed506fccc42c_u128),
@@ -61,7 +73,7 @@ fn arithmetic(c: &mut Criterion) {
         b.iter(|| black_box(nums[0]) - black_box(nums[1]))
     });
 
-    for (name, shift) in [("short", 21_u32), ("long", 176_u32)] {
+    for (name, shift) in [("short", sh(21)), ("long", sh(176))] {
         c.bench_with_input(BenchmarkId::new("U256::shl", name), &shift, |b, &s| {
             b.iter(|| black_box(nums[0]) << black_box(s))
         });
@@ -90,7 +102,7 @@ fn arithmetic(c: &mut Criterion) {
             b.iter(|| black_box(x).leading_zeros())
         });
 
-        #[cfg(not(feature = "primitive-types"))]
+        #[cfg(not(any(feature = "primitive-types", feature = "ruint")))]
         c.bench_with_input(
             BenchmarkId::new("U256::cttz", name(x)),
             &x.swap_bytes(),
