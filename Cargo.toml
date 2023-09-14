@@ -13,21 +13,19 @@ keywords = ["integer", "u256", "ethereum"]
 categories = ["cryptography::cryptocurrencies", "mathematics", "no-std"]
 
 [package.metadata.docs.rs]
-features = ["macros", "serde"]
+features = ["serde"]
 
 [workspace]
 members = [
   "bench",
   "fuzz",
   "intrinsics",
-  "macros",
 ]
 
 [features]
 llvm-intrinsics = ["ethnum-intrinsics"]
-macros = ["ethnum-macros"]
+macros = [] # deprecated
 
 [dependencies]
 ethnum-intrinsics = { version = "=1.2.0", path = "intrinsics", optional = true }
-ethnum-macros = { version = "=1.1.0", path = "macros", optional = true }
 serde = { version = "1", default-features = false, optional = true }

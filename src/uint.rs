@@ -135,9 +135,11 @@ impl U256 {
     ///
     /// The string is expected to be an optional `+` sign followed by the one of
     /// the supported prefixes and finally the digits. Leading and trailing
-    /// whitespace represent an error. The base is dertermined based on the
+    /// whitespace represent an error. The base is determined based on the
     /// prefix:
     ///
+    /// * `0b`: base `2`
+    /// * `0o`: base `8`
     /// * `0x`: base `16`
     /// * no prefix: base `10`
     ///
@@ -147,11 +149,21 @@ impl U256 {
     ///
     /// ```
     /// # use ethnum::U256;
+    /// assert_eq!(U256::from_str_prefixed("0b101"), Ok(U256::new(0b101)));
+    /// assert_eq!(U256::from_str_prefixed("0o17"), Ok(U256::new(0o17)));
+    /// assert_eq!(U256::from_str_prefixed("0xa"), Ok(U256::new(0xa)));
     /// assert_eq!(U256::from_str_prefixed("42"), Ok(U256::new(42)));
-    /// assert_eq!(U256::from_str_prefixed("0xa"), Ok(U256::new(10)));
     /// ```
     pub fn from_str_prefixed(src: &str) -> Result<Self, ParseIntError> {
         crate::parse::from_str_prefixed(src)
+    }
+
+    /// Same as [`U256::from_str_prefixed`] but as a `const fn`. This method is
+    /// not intended to be used directly but rather through the [`crate::uint`]
+    /// macro.
+    #[doc(hidden)]
+    pub const fn const_from_str_prefixed(src: &str) -> Self {
+        parse::const_from_str_prefixed(src)
     }
 
     /// Cast to a primitive `i8`.

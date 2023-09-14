@@ -4,6 +4,7 @@
 //! implementation for primitive integer types:
 //! <https://doc.rust-lang.org/src/core/num/mod.rs.html>
 
+use crate::U256;
 use core::{
     mem,
     num::{IntErrorKind, ParseIntError},
@@ -127,5 +128,78 @@ pub(crate) fn from_str_radix<T: FromStrRadixHelper>(
 }
 
 pub(crate) fn from_str_prefixed<T: FromStrRadixHelper>(src: &str) -> Result<T, ParseIntError> {
-    from_str_radix(src, 16, Some("0x")).or_else(|_| from_str_radix(src, 10, None))
+    from_str_radix(src, 2, Some("0b"))
+        .or_else(|_| from_str_radix(src, 8, Some("0o")))
+        .or_else(|_| from_str_radix(src, 16, Some("0x")))
+        .or_else(|_| from_str_radix(src, 10, None))
+}
+
+pub(crate) const fn const_from_str_prefixed(bytes: &[u8], start: usize) -> U256 {
+    const fn check(overflow: bool) {
+        assert!(!overflow, "overflows integer type");
+    }
+
+    const fn add(a: U256, b: u8) -> U256 {
+        let (hi, lo) = a.into_words();
+
+        let (lo, carry) = lo.overflowing_add(b as _);
+        let (hi, overflow) = hi.overflowing_add(carry as _);
+        check(overflow);
+
+        U256::from_words(hi, lo)
+    }
+
+    const fn mul(a: U256, r: u128) -> U256 {
+        let (hi, lo) = a.into_words();
+        let (lh, ll) = (lo >> 64, lo & u64::MAX as u128);
+
+        let ll = ll * r;
+        let lh = lh * r;
+        let (hi, overflow) = hi.overflowing_mul(r);
+        check(overflow);
+
+        let (lo, overflow) = ll.overflowing_add(lh << 64);
+        check(overflow);
+        let (hi, overflow) = hi.overflowing_add(lh >> 64);
+        check(overflow);
+
+        U256::from_words(hi, lo)
+    }
+
+    assert!(bytes.len() > start, "missing number");
+
+    let (radix, mut i) = if bytes.len() - start > 2 {
+        match (bytes[start], bytes[start + 1]) {
+            (b'0', b'b') => (2, start + 2),
+            (b'0', b'o') => (8, start + 2),
+            (b'0', b'x') => (16, start + 2),
+            _ => (10, start),
+        }
+    } else {
+        (10, start)
+    };
+
+    let mut value = U256::ZERO;
+
+    while i < bytes.len() {
+        let byte = bytes[i];
+        i += 1;
+
+        if byte == b'_' || byte.is_ascii_whitespace() {
+            continue;
+        }
+
+        let next = match (byte, radix) {
+            (b'0'..=b'1', 2 | 8 | 10 | 16) => byte - b'0',
+            (b'2'..=b'7', 8 | 10 | 16) => byte - b'0',
+            (b'8'..=b'9', 10 | 16) => byte - b'0',
+            (b'a'..=b'f', 16) => byte - b'a' + 0xa,
+            (b'A'..=b'F', 16) => byte - b'A' + 0xa,
+            (b'_', _) => continue,
+            _ => panic!("invalid digit"),
+        };
+        value = add(mul(value, radix), next);
+    }
+
+    value
 }

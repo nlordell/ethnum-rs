@@ -14,21 +14,13 @@ ethnum = "1"
 
 The API follows the Rust `{i,u}N` primitive types as close as possible.
 
-## Features
+### Macros
 
-### `macros`:
-
-The `macros` feature adds 256-bit integer literal support. This allows you to
-specify 256-bit signed and unsigned integer literals (that can, for example, be
-used as `const`s) that are larger than the largest native integer literal
-(`i128::MIN` and `i128::MAX` for signed integers and `u128::MAX` for unsigned
-integers).
-
-```toml
-ethnum = { version = "1", features = ["macros"] }
-```
-
-And then:
+This crate provides `const fn` based macros for 256-bit integer literals. This
+allows you to specify 256-bit signed and unsigned integer literals (that can,
+for example, be used as `const`s) that are larger than the largest native
+integer literal (`i128::MIN` and `i128::MAX` for signed integers and `u128::MAX`
+for unsigned integers):
 
 ```rust
 int!("-57896044618658097711785492504343953926634992332820282019728792003956564819968");
@@ -46,6 +38,16 @@ int!("0o 0123 4567");
 uint!("0xffff_ffff");
 ```
 
+## Features
+
+### `macros`
+
+The `macros` feature used to enable 256-bit integer literals via procedural
+macros. However, this crate now implements these macros with `const fn`, so the
+feature is now deprecated and the macros are now always available. The feature
+is still around to not break semantic versioning, but will be removed in a
+version `2`.
+
 ### `serde`
 
 The `serde` feature adds support for `serde` serialization and deserialization.
@@ -59,11 +61,11 @@ The 256-bit integers uses intrinsics based on two implementations:
 
 ### Native Rust Implementation
 
-The integer intrinsics are implemented using standard Rust. The more
-complicated operations such as multiplication and division are ported from C
-compiler intrinsics for implementing equivalent 128-bit operations on 64-bit
-systems (or 64-bit operations on 32-bit systems). In general, these are ported
-from the Clang `compiler-rt` support routines.
+The integer intrinsics are implemented using standard Rust. The more complicated
+operations such as multiplication and division are ported from C compiler
+intrinsics for implementing equivalent 128-bit operations on 64-bit systems (or
+64-bit operations on 32-bit systems). In general, these are ported from the
+Clang `compiler-rt` support routines.
 
 This is the default implementation used by the crate, and in general is quite
 well optimized. When using native the implementation, there are no additional
@@ -109,8 +111,8 @@ rustc --version --verbose | grep LLVM
 
 In particular, this affects macOS which ships its own `clang` binary. The
 `ethnum-intrinsics` build script accepts a `CLANG` environment variable to
-specity a specific `clang` executable path to use. Using the major LLVM
-version from the command above:
+specity a specific `clang` executable path to use. Using the major LLVM version
+from the command above:
 
 ```
 brew install llvm@${LLVM_VERSION}
@@ -148,8 +150,8 @@ RUSTFLAGS="-Clinker-plugin-lto -Clinker=clang -Clink-arg=-fuse-ld=lld" cargo ben
 
 The `ethnum-fuzz` crate implements an AFL fuzzing target (as well as some
 utilities for working with `cargo afl`). Internally, it converts the signed
-256-bit integer types to `num::BigInt` and uses its operation implementations
-as a reference.
+256-bit integer types to `num::BigInt` and uses its operation implementations as
+a reference.
 
 In order to start fuzzing:
 
@@ -161,6 +163,7 @@ cargo afl fuzz -i target/fuzz/in -o target/fuzz/out target/debug/fuzz
 ```
 
 In order to replay crashes:
+
 ```sh
 cargo run -p ethnum-fuzz --bin dump target/fuzz/out/default/crashes/FILE
 ```
