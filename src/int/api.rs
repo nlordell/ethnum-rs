@@ -444,6 +444,26 @@ impl I256 {
         }
     }
 
+    /// Checked addition with an unsigned integer. Computes `self + rhs`,
+    /// returning `None` if overflow occurred.
+    ///
+    /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    /// ```
+    /// # use ethnum::{I256, U256};
+    /// assert_eq!(I256::new(1).checked_add_unsigned(U256::new(2)), Some(I256::new(3)));
+    /// assert_eq!((I256::MAX - 2).checked_add_unsigned(U256::new(3)), None);
+    /// ```
+    #[must_use = "this returns the result of the operation, \
+                    without modifying the original"]
+    #[inline]
+    pub fn checked_add_unsigned(self, rhs: U256) -> Option<Self> {
+        let (a, b) = self.overflowing_add_unsigned(rhs);
+        if b {None} else {Some(a)}
+    }
+
     /// Checked integer subtraction. Computes `self - rhs`, returning `None` if
     /// overflow occurred.
     ///
@@ -466,6 +486,26 @@ impl I256 {
         } else {
             Some(a)
         }
+    }
+
+    /// Checked subtraction with an unsigned integer. Computes `self - rhs`,
+    /// returning `None` if overflow occurred.
+    ///
+    /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    /// ```
+    /// # use ethnum::{I256, U256};
+    /// assert_eq!(I256::new(1).checked_sub_unsigned(U256::new(2)), Some(I256::new(-1)));
+    /// assert_eq!((I256::MIN + 2).checked_sub_unsigned(U256::new(3)), None);
+    /// ```
+    #[must_use = "this returns the result of the operation, \
+                    without modifying the original"]
+    #[inline]
+    pub fn checked_sub_unsigned(self, rhs: U256) -> Option<Self> {
+        let (a, b) = self.overflowing_sub_unsigned(rhs);
+        if b {None} else {Some(a)}
     }
 
     /// Checked integer multiplication. Computes `self * rhs`, returning `None`
@@ -748,6 +788,30 @@ impl I256 {
         }
     }
 
+    /// Saturating addition with an unsigned integer. Computes `self + rhs`,
+    /// saturating at the numeric bounds instead of overflowing.
+    ///
+    /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    /// ```
+    /// # use ethnum::{I256, U256};
+    /// assert_eq!(I256::new(1).saturating_add_unsigned(U256::new(2)), 3);
+    /// assert_eq!(I256::MAX.saturating_add_unsigned(U256::new(100)), I256::MAX);
+    /// ```
+    #[must_use = "this returns the result of the operation, \
+                    without modifying the original"]
+    #[inline]
+    pub fn saturating_add_unsigned(self, rhs: U256) -> Self {
+        // Overflow can only happen at the upper bound
+        // We cannot use `unwrap_or` here because it is not `const`
+        match self.checked_add_unsigned(rhs) {
+            Some(x) => x,
+            None => Self::MAX,
+        }
+    }
+
     /// Saturating integer subtraction. Computes `self - rhs`, saturating at the
     /// numeric bounds instead of overflowing.
     ///
@@ -774,6 +838,30 @@ impl I256 {
                     Self::MAX
                 }
             }
+        }
+    }
+
+    /// Saturating subtraction with an unsigned integer. Computes `self - rhs`,
+    /// saturating at the numeric bounds instead of overflowing.
+    ///
+    /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    /// ```
+    /// # use ethnum::{I256, U256};
+    /// assert_eq!(I256::new(100).saturating_sub_unsigned(U256::new(127)), -27);
+    /// assert_eq!(I256::MIN.saturating_sub_unsigned(U256::new(100)), I256::MIN);
+    /// ```
+    #[must_use = "this returns the result of the operation, \
+                    without modifying the original"]
+    #[inline]
+    pub fn saturating_sub_unsigned(self, rhs: U256) -> Self {
+        // Overflow can only happen at the lower bound
+        // We cannot use `unwrap_or` here because it is not `const`
+        match self.checked_sub_unsigned(rhs) {
+            Some(x) => x,
+            None => Self::MIN,
         }
     }
 
@@ -923,6 +1011,25 @@ impl I256 {
         unsafe { result.assume_init() }
     }
 
+    /// Wrapping (modular) addition with an unsigned integer. Computes
+    /// `self + rhs`, wrapping around at the boundary of the type.
+    ///
+    /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    /// ```
+    /// # use ethnum::{I256, U256};
+    /// assert_eq!(I256::new(100).wrapping_add_unsigned(U256::new(27)), 127);
+    /// assert_eq!(I256::MAX.wrapping_add_unsigned(U256::new(2)), I256::MIN + 1);
+    /// ```
+    #[must_use = "this returns the result of the operation, \
+                    without modifying the original"]
+    #[inline(always)]
+    pub fn wrapping_add_unsigned(self, rhs: U256) -> Self {
+        self.wrapping_add(rhs.as_i256())
+    }
+
     /// Wrapping (modular) subtraction. Computes `self - rhs`, wrapping around
     /// at the boundary of the type.
     ///
@@ -942,6 +1049,25 @@ impl I256 {
         let mut result = MaybeUninit::uninit();
         intrinsics::signed::isub3(&mut result, &self, &rhs);
         unsafe { result.assume_init() }
+    }
+
+    /// Wrapping (modular) subtraction with an unsigned integer. Computes
+    /// `self - rhs`, wrapping around at the boundary of the type.
+    ///
+    /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    /// ```
+    /// # use ethnum::{I256, U256};
+    /// assert_eq!(I256::new(0).wrapping_sub_unsigned(U256::new(127)), -127);
+    /// assert_eq!(I256::new(-2).wrapping_sub_unsigned(U256::MAX), -1);
+    /// ```
+    #[must_use = "this returns the result of the operation, \
+                    without modifying the original"]
+    #[inline(always)]
+    pub fn wrapping_sub_unsigned(self, rhs: U256) -> Self {
+        self.wrapping_sub(rhs.as_i256())
     }
 
     /// Wrapping (modular) multiplication. Computes `self * rhs`, wrapping
@@ -1279,6 +1405,31 @@ impl I256 {
         (unsafe { result.assume_init() }, overflow)
     }
 
+    /// Calculates `self` + `rhs` with an unsigned `rhs`
+    ///
+    /// Returns a tuple of the addition along with a boolean indicating
+    /// whether an arithmetic overflow would occur. If an overflow would
+    /// have occurred then the wrapped value is returned.
+    ///
+    /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    /// ```
+    /// # use ethnum::{I256, U256};
+    /// assert_eq!(I256::new(1).overflowing_add_unsigned(U256::new(2)), (I256::new(3), false));
+    /// assert_eq!((I256::MIN).overflowing_add_unsigned(U256::MAX), (I256::MAX, false));
+    /// assert_eq!((I256::MAX - 2).overflowing_add_unsigned(U256::new(3)), (I256::MIN, true));
+    /// ```
+    #[must_use = "this returns the result of the operation, \
+                    without modifying the original"]
+    #[inline]
+    pub fn overflowing_add_unsigned(self, rhs: U256) -> (Self, bool) {
+        let rhs = rhs.as_i256();
+        let (res, overflowed) = self.overflowing_add(rhs);
+        (res, overflowed ^ (rhs < 0))
+    }
+
     /// Calculates `self` - `rhs`
     ///
     /// Returns a tuple of the subtraction along with a boolean indicating
@@ -1301,6 +1452,31 @@ impl I256 {
         let mut result = MaybeUninit::uninit();
         let overflow = intrinsics::signed::isubc(&mut result, &self, &rhs);
         (unsafe { result.assume_init() }, overflow)
+    }
+
+    /// Calculates `self` - `rhs` with an unsigned `rhs`
+    ///
+    /// Returns a tuple of the subtraction along with a boolean indicating
+    /// whether an arithmetic overflow would occur. If an overflow would
+    /// have occurred then the wrapped value is returned.
+    ///
+    /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    /// ```
+    /// # use ethnum::{I256, U256};
+    /// assert_eq!(I256::new(1).overflowing_sub_unsigned(U256::new(2)), (I256::new(-1), false));
+    /// assert_eq!((I256::MAX).overflowing_sub_unsigned(U256::MAX), (I256::MIN, false));
+    /// assert_eq!((I256::MIN + 2).overflowing_sub_unsigned(U256::new(3)), (I256::MAX, true));
+    /// ```
+    #[must_use = "this returns the result of the operation, \
+                    without modifying the original"]
+    #[inline]
+    pub fn overflowing_sub_unsigned(self, rhs: U256) -> (Self, bool) {
+        let rhs = rhs.as_i256();
+        let (res, overflowed) = self.overflowing_sub(rhs);
+        (res, overflowed ^ (rhs < 0))
     }
 
     /// Computes the absolute difference between `self` and `other`.
