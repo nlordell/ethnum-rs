@@ -425,7 +425,6 @@ impl U256 {
         }
     }
 
-
     /// Checked addition with a signed integer. Computes `self + rhs`,
     /// returning `None` if overflow occurred.
     ///
@@ -434,7 +433,8 @@ impl U256 {
     /// Basic usage:
     ///
     /// ```
-    /// # use ethnum::{I256, U256};
+    /// # use ethnum::U256;
+    /// use ethnum::I256;
     /// assert_eq!(U256::new(1).checked_add_signed(I256::new(2)), Some(U256::new(3)));
     /// assert_eq!(U256::new(1).checked_add_signed(I256::new(-2)), None);
     /// assert_eq!((U256::MAX - 2).checked_add_signed(I256::new(3)), None);
@@ -442,9 +442,13 @@ impl U256 {
     #[must_use = "this returns the result of the operation, \
                     without modifying the original"]
     #[inline]
-    pub fn checked_add_signed(self, rhs: I256 ) -> Option<Self> {
+    pub fn checked_add_signed(self, rhs: I256) -> Option<Self> {
         let (a, b) = self.overflowing_add_signed(rhs);
-        if b {None} else {Some(a)}
+        if b {
+            None
+        } else {
+            Some(a)
+        }
     }
 
     /// Checked integer subtraction. Computes `self - rhs`, returning `None` if
@@ -723,7 +727,8 @@ impl U256 {
     /// Basic usage:
     ///
     /// ```
-    /// # use ethnum::{I256, U256};
+    /// # use ethnum::U256;
+    /// use ethnum::I256;
     /// assert_eq!(U256::new(1).saturating_add_signed(I256::new(2)), U256::new(3));
     /// assert_eq!(U256::new(1).saturating_add_signed(I256::new(-2)), U256::new(0));
     /// assert_eq!((U256::MAX - 2).saturating_add_signed(I256::new(4)), U256::MAX);
@@ -858,7 +863,8 @@ impl U256 {
     /// Basic usage:
     ///
     /// ```
-    /// # use ethnum::{I256, U256};
+    /// # use ethnum::U256;
+    /// use ethnum::I256;
     /// assert_eq!(U256::new(1).wrapping_add_signed(I256::new(2)), U256::new(3));
     /// assert_eq!(U256::new(1).wrapping_add_signed(I256::new(-2)), U256::MAX);
     /// assert_eq!((U256::MAX - 2).wrapping_add_signed(I256::new(4)), U256::new(1));
@@ -1167,7 +1173,8 @@ impl U256 {
     /// Basic usage:
     ///
     /// ```
-    /// # use ethnum::{I256, U256};
+    /// # use ethnum::U256;
+    /// use ethnum::I256;
     /// assert_eq!(U256::new(1).overflowing_add_signed(I256::new(2)), (U256::new(3), false));
     /// assert_eq!(U256::new(1).overflowing_add_signed(I256::new(-2)), (U256::MAX, true));
     /// assert_eq!((U256::MAX - 2).overflowing_add_signed(I256::new(4)), (U256::new(1), true));
