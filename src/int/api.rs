@@ -1308,8 +1308,7 @@ impl I256 {
     /// Basic usage:
     ///
     /// ```
-    /// # use ethnum::I256;
-    /// use ethnum::U256;
+    /// # use ethnum::{I256, U256};
     /// assert_eq!(I256::new(100).wrapping_abs(), 100);
     /// assert_eq!(I256::new(-100).wrapping_abs(), 100);
     /// assert_eq!(I256::MIN.wrapping_abs(), I256::MIN);
