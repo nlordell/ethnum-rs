@@ -119,7 +119,7 @@ impl U256 {
     /// let n = U256::MAX >> 2u32;
     /// assert_eq!(n.leading_zeros(), 2);
     /// ```
-    #[inline]
+    #[inline(always)]
     pub fn leading_zeros(self) -> u32 {
         intrinsics::signed::uctlz(&self)
     }
@@ -136,7 +136,7 @@ impl U256 {
     /// let n = U256::new(0b0101000);
     /// assert_eq!(n.trailing_zeros(), 3);
     /// ```
-    #[inline]
+    #[inline(always)]
     pub fn trailing_zeros(self) -> u32 {
         intrinsics::signed::ucttz(&self)
     }
@@ -196,7 +196,7 @@ impl U256 {
     /// ```
     #[must_use = "this returns the result of the operation, \
                           without modifying the original"]
-    #[inline]
+    #[inline(always)]
     pub fn rotate_left(self, n: u32) -> Self {
         let mut r = MaybeUninit::uninit();
         intrinsics::signed::urol3(&mut r, &self, n);
@@ -224,7 +224,7 @@ impl U256 {
     /// ```
     #[must_use = "this returns the result of the operation, \
                           without modifying the original"]
-    #[inline]
+    #[inline(always)]
     pub fn rotate_right(self, n: u32) -> Self {
         let mut r = MaybeUninit::uninit();
         intrinsics::signed::uror3(&mut r, &self, n);
@@ -300,7 +300,7 @@ impl U256 {
     ///     assert_eq!(U256::from_be(n), n.swap_bytes());
     /// }
     /// ```
-    #[inline]
+    #[inline(always)]
     #[allow(clippy::wrong_self_convention)]
     pub const fn from_be(x: Self) -> Self {
         #[cfg(target_endian = "big")]
@@ -330,7 +330,7 @@ impl U256 {
     ///     assert_eq!(U256::from_le(n), n.swap_bytes())
     /// }
     /// ```
-    #[inline]
+    #[inline(always)]
     #[allow(clippy::wrong_self_convention)]
     pub const fn from_le(x: Self) -> Self {
         #[cfg(target_endian = "little")]
@@ -360,7 +360,7 @@ impl U256 {
     ///     assert_eq!(n.to_be(), n.swap_bytes())
     /// }
     /// ```
-    #[inline]
+    #[inline(always)]
     pub const fn to_be(self) -> Self {
         #[cfg(target_endian = "big")]
         {
@@ -389,7 +389,7 @@ impl U256 {
     ///     assert_eq!(n.to_le(), n.swap_bytes())
     /// }
     /// ```
-    #[inline]
+    #[inline(always)]
     pub const fn to_le(self) -> Self {
         #[cfg(target_endian = "little")]
         {
@@ -752,7 +752,7 @@ impl U256 {
     /// ```
     #[must_use = "this returns the result of the operation, \
                   without modifying the original"]
-    #[inline]
+    #[inline(always)]
     pub fn saturating_div(self, rhs: Self) -> Self {
         // on unsigned types, there is no overflow in integer division
         self.wrapping_div(rhs)
@@ -794,7 +794,7 @@ impl U256 {
     /// ```
     #[must_use = "this returns the result of the operation, \
                   without modifying the original"]
-    #[inline]
+    #[inline(always)]
     pub fn wrapping_add(self, rhs: Self) -> Self {
         let mut result = MaybeUninit::uninit();
         intrinsics::signed::uadd3(&mut result, &self, &rhs);
@@ -815,7 +815,7 @@ impl U256 {
     /// ```
     #[must_use = "this returns the result of the operation, \
                   without modifying the original"]
-    #[inline]
+    #[inline(always)]
     pub fn wrapping_sub(self, rhs: Self) -> Self {
         let mut result = MaybeUninit::uninit();
         intrinsics::signed::usub3(&mut result, &self, &rhs);
@@ -839,7 +839,7 @@ impl U256 {
     /// ```
     #[must_use = "this returns the result of the operation, \
                   without modifying the original"]
-    #[inline]
+    #[inline(always)]
     pub fn wrapping_mul(self, rhs: Self) -> Self {
         let mut result = MaybeUninit::uninit();
         intrinsics::signed::umul3(&mut result, &self, &rhs);
@@ -861,7 +861,7 @@ impl U256 {
     /// ```
     #[must_use = "this returns the result of the operation, \
                   without modifying the original"]
-    #[inline]
+    #[inline(always)]
     pub fn wrapping_div(self, rhs: Self) -> Self {
         self / rhs
     }
@@ -883,7 +883,7 @@ impl U256 {
     /// ```
     #[must_use = "this returns the result of the operation, \
                   without modifying the original"]
-    #[inline]
+    #[inline(always)]
     pub fn wrapping_div_euclid(self, rhs: Self) -> Self {
         self / rhs
     }
@@ -903,7 +903,7 @@ impl U256 {
     /// ```
     #[must_use = "this returns the result of the operation, \
                   without modifying the original"]
-    #[inline]
+    #[inline(always)]
     pub fn wrapping_rem(self, rhs: Self) -> Self {
         self % rhs
     }
@@ -925,7 +925,7 @@ impl U256 {
     /// ```
     #[must_use = "this returns the result of the operation, \
                   without modifying the original"]
-    #[inline]
+    #[inline(always)]
     pub fn wrapping_rem_euclid(self, rhs: Self) -> Self {
         self % rhs
     }
@@ -984,7 +984,7 @@ impl U256 {
     /// ```
     #[must_use = "this returns the result of the operation, \
                   without modifying the original"]
-    #[inline]
+    #[inline(always)]
     pub fn wrapping_shl(self, rhs: u32) -> Self {
         let mut result = MaybeUninit::uninit();
         intrinsics::signed::ushl3(&mut result, &self, rhs & 0xff);
@@ -1013,7 +1013,7 @@ impl U256 {
     /// ```
     #[must_use = "this returns the result of the operation, \
                   without modifying the original"]
-    #[inline]
+    #[inline(always)]
     pub fn wrapping_shr(self, rhs: u32) -> Self {
         let mut result = MaybeUninit::uninit();
         intrinsics::signed::ushr3(&mut result, &self, rhs & 0xff);
@@ -1080,7 +1080,7 @@ impl U256 {
     /// ```
     #[must_use = "this returns the result of the operation, \
                   without modifying the original"]
-    #[inline]
+    #[inline(always)]
     pub fn overflowing_add(self, rhs: Self) -> (Self, bool) {
         let mut result = MaybeUninit::uninit();
         let overflow = intrinsics::signed::uaddc(&mut result, &self, &rhs);
@@ -1104,7 +1104,7 @@ impl U256 {
     /// ```
     #[must_use = "this returns the result of the operation, \
                   without modifying the original"]
-    #[inline]
+    #[inline(always)]
     pub fn overflowing_sub(self, rhs: Self) -> (Self, bool) {
         let mut result = MaybeUninit::uninit();
         let overflow = intrinsics::signed::usubc(&mut result, &self, &rhs);
@@ -1156,7 +1156,7 @@ impl U256 {
     /// ```
     #[must_use = "this returns the result of the operation, \
                   without modifying the original"]
-    #[inline]
+    #[inline(always)]
     pub fn overflowing_mul(self, rhs: Self) -> (Self, bool) {
         let mut result = MaybeUninit::uninit();
         let overflow = intrinsics::signed::umulc(&mut result, &self, &rhs);
@@ -1183,7 +1183,7 @@ impl U256 {
     /// ```
     #[must_use = "this returns the result of the operation, \
                   without modifying the original"]
-    #[inline]
+    #[inline(always)]
     pub fn overflowing_div(self, rhs: Self) -> (Self, bool) {
         (self / rhs, false)
     }
@@ -1210,7 +1210,7 @@ impl U256 {
     /// ```
     #[must_use = "this returns the result of the operation, \
                   without modifying the original"]
-    #[inline]
+    #[inline(always)]
     pub fn overflowing_div_euclid(self, rhs: Self) -> (Self, bool) {
         (self / rhs, false)
     }
@@ -1236,7 +1236,7 @@ impl U256 {
     /// ```
     #[must_use = "this returns the result of the operation, \
                   without modifying the original"]
-    #[inline]
+    #[inline(always)]
     pub fn overflowing_rem(self, rhs: Self) -> (Self, bool) {
         (self % rhs, false)
     }
@@ -1265,7 +1265,7 @@ impl U256 {
     /// ```
     #[must_use = "this returns the result of the operation, \
                   without modifying the original"]
-    #[inline]
+    #[inline(always)]
     pub fn overflowing_rem_euclid(self, rhs: Self) -> (Self, bool) {
         (self % rhs, false)
     }
@@ -1310,7 +1310,7 @@ impl U256 {
     /// ```
     #[must_use = "this returns the result of the operation, \
                   without modifying the original"]
-    #[inline]
+    #[inline(always)]
     pub fn overflowing_shl(self, rhs: u32) -> (Self, bool) {
         (self.wrapping_shl(rhs), rhs > 255)
     }
@@ -1334,7 +1334,7 @@ impl U256 {
     /// ```
     #[must_use = "this returns the result of the operation, \
                   without modifying the original"]
-    #[inline]
+    #[inline(always)]
     pub fn overflowing_shr(self, rhs: u32) -> (Self, bool) {
         (self.wrapping_shr(rhs), rhs > 255)
     }
@@ -1450,7 +1450,7 @@ impl U256 {
     /// ```
     #[must_use = "this returns the result of the operation, \
                   without modifying the original"]
-    #[inline]
+    #[inline(always)]
     pub fn div_euclid(self, rhs: Self) -> Self {
         self / rhs
     }
@@ -1474,7 +1474,7 @@ impl U256 {
     /// ```
     #[must_use = "this returns the result of the operation, \
                   without modifying the original"]
-    #[inline]
+    #[inline(always)]
     pub fn rem_euclid(self, rhs: Self) -> Self {
         self % rhs
     }
