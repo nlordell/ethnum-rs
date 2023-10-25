@@ -167,84 +167,98 @@ impl U256 {
     }
 
     /// Cast to a primitive `i8`.
+    #[inline]
     pub const fn as_i8(self) -> i8 {
         let (_, lo) = self.into_words();
         lo as _
     }
 
     /// Cast to a primitive `i16`.
+    #[inline]
     pub const fn as_i16(self) -> i16 {
         let (_, lo) = self.into_words();
         lo as _
     }
 
     /// Cast to a primitive `i32`.
+    #[inline]
     pub const fn as_i32(self) -> i32 {
         let (_, lo) = self.into_words();
         lo as _
     }
 
     /// Cast to a primitive `i64`.
+    #[inline]
     pub const fn as_i64(self) -> i64 {
         let (_, lo) = self.into_words();
         lo as _
     }
 
     /// Cast to a primitive `i128`.
+    #[inline]
     pub const fn as_i128(self) -> i128 {
         let (_, lo) = self.into_words();
         lo as _
     }
 
     /// Cast to a `I256`.
+    #[inline]
     pub const fn as_i256(self) -> I256 {
         let Self([a, b]) = self;
         I256([a as _, b as _])
     }
 
     /// Cast to a primitive `u8`.
+    #[inline]
     pub const fn as_u8(self) -> u8 {
         let (_, lo) = self.into_words();
         lo as _
     }
 
     /// Cast to a primitive `u16`.
+    #[inline]
     pub const fn as_u16(self) -> u16 {
         let (_, lo) = self.into_words();
         lo as _
     }
 
     /// Cast to a primitive `u32`.
+    #[inline]
     pub const fn as_u32(self) -> u32 {
         let (_, lo) = self.into_words();
         lo as _
     }
 
     /// Cast to a primitive `u64`.
+    #[inline]
     pub const fn as_u64(self) -> u64 {
         let (_, lo) = self.into_words();
         lo as _
     }
 
     /// Cast to a primitive `u128`.
+    #[inline]
     pub const fn as_u128(self) -> u128 {
         let (_, lo) = self.into_words();
         lo
     }
 
     /// Cast to a primitive `isize`.
+    #[inline]
     pub const fn as_isize(self) -> isize {
         let (_, lo) = self.into_words();
         lo as _
     }
 
     /// Cast to a primitive `usize`.
+    #[inline]
     pub const fn as_usize(self) -> usize {
         let (_, lo) = self.into_words();
         lo as _
     }
 
     /// Cast to a primitive `f32`.
+    #[inline]
     pub fn as_f32(self) -> f32 {
         match self.into_words() {
             (0, lo) => lo as _,
@@ -253,6 +267,7 @@ impl U256 {
     }
 
     /// Cast to a primitive `f64`.
+    #[inline]
     pub fn as_f64(self) -> f64 {
         // NOTE: Binary representation of 2**128. This is used because `powi` is
         // neither `const` nor `no_std`.
