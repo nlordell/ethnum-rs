@@ -126,7 +126,7 @@ impl I256 {
     ///
     /// assert_eq!(n.leading_zeros(), 0);
     /// ```
-    #[inline]
+    #[inline(always)]
     pub fn leading_zeros(self) -> u32 {
         intrinsics::signed::ictlz(&self)
     }
@@ -144,7 +144,7 @@ impl I256 {
     ///
     /// assert_eq!(n.trailing_zeros(), 2);
     /// ```
-    #[inline]
+    #[inline(always)]
     pub fn trailing_zeros(self) -> u32 {
         intrinsics::signed::icttz(&self)
     }
@@ -206,7 +206,7 @@ impl I256 {
     /// ```
     #[must_use = "this returns the result of the operation, \
                   without modifying the original"]
-    #[inline]
+    #[inline(always)]
     pub fn rotate_left(self, n: u32) -> Self {
         let mut r = MaybeUninit::uninit();
         intrinsics::signed::irol3(&mut r, &self, n);
@@ -235,7 +235,7 @@ impl I256 {
     /// ```
     #[must_use = "this returns the result of the operation, \
                   without modifying the original"]
-    #[inline]
+    #[inline(always)]
     pub fn rotate_right(self, n: u32) -> Self {
         let mut r = MaybeUninit::uninit();
         intrinsics::signed::iror3(&mut r, &self, n);
@@ -317,7 +317,7 @@ impl I256 {
     ///     assert_eq!(I256::from_be(n), n.swap_bytes())
     /// }
     /// ```
-    #[inline]
+    #[inline(always)]
     pub const fn from_be(x: Self) -> Self {
         #[cfg(target_endian = "big")]
         {
@@ -347,7 +347,7 @@ impl I256 {
     ///     assert_eq!(I256::from_le(n), n.swap_bytes())
     /// }
     /// ```
-    #[inline]
+    #[inline(always)]
     pub const fn from_le(x: Self) -> Self {
         #[cfg(target_endian = "little")]
         {
@@ -377,7 +377,7 @@ impl I256 {
     ///     assert_eq!(n.to_be(), n.swap_bytes())
     /// }
     /// ```
-    #[inline]
+    #[inline(always)]
     pub const fn to_be(self) -> Self {
         // or not to be?
         #[cfg(target_endian = "big")]
@@ -408,7 +408,7 @@ impl I256 {
     ///     assert_eq!(n.to_le(), n.swap_bytes())
     /// }
     /// ```
-    #[inline]
+    #[inline(always)]
     pub const fn to_le(self) -> Self {
         #[cfg(target_endian = "little")]
         {
@@ -792,7 +792,7 @@ impl I256 {
     /// assert_eq!(I256::MAX.saturating_neg(), I256::MIN + 1);
     /// ```
 
-    #[inline]
+    #[inline(always)]
     pub fn saturating_neg(self) -> Self {
         I256::ZERO.saturating_sub(self)
     }
@@ -916,7 +916,7 @@ impl I256 {
     /// ```
     #[must_use = "this returns the result of the operation, \
                   without modifying the original"]
-    #[inline]
+    #[inline(always)]
     pub fn wrapping_add(self, rhs: Self) -> Self {
         let mut result = MaybeUninit::uninit();
         intrinsics::signed::iadd3(&mut result, &self, &rhs);
@@ -937,7 +937,7 @@ impl I256 {
     /// ```
     #[must_use = "this returns the result of the operation, \
                   without modifying the original"]
-    #[inline]
+    #[inline(always)]
     pub fn wrapping_sub(self, rhs: Self) -> Self {
         let mut result = MaybeUninit::uninit();
         intrinsics::signed::isub3(&mut result, &self, &rhs);
@@ -958,7 +958,7 @@ impl I256 {
     /// ```
     #[must_use = "this returns the result of the operation, \
                   without modifying the original"]
-    #[inline]
+    #[inline(always)]
     pub fn wrapping_mul(self, rhs: Self) -> Self {
         let mut result = MaybeUninit::uninit();
         intrinsics::signed::imul3(&mut result, &self, &rhs);
@@ -1094,7 +1094,7 @@ impl I256 {
     /// assert_eq!(I256::new(100).wrapping_neg(), -100);
     /// assert_eq!(I256::MIN.wrapping_neg(), I256::MIN);
     /// ```
-    #[inline]
+    #[inline(always)]
     pub fn wrapping_neg(self) -> Self {
         Self::ZERO.wrapping_sub(self)
     }
@@ -1121,7 +1121,7 @@ impl I256 {
     /// ```
     #[must_use = "this returns the result of the operation, \
                   without modifying the original"]
-    #[inline]
+    #[inline(always)]
     pub fn wrapping_shl(self, rhs: u32) -> Self {
         let mut result = MaybeUninit::uninit();
         intrinsics::signed::ishl3(&mut result, &self, rhs & 0xff);
@@ -1150,7 +1150,7 @@ impl I256 {
     /// ```
     #[must_use = "this returns the result of the operation, \
                   without modifying the original"]
-    #[inline]
+    #[inline(always)]
     pub fn wrapping_shr(self, rhs: u32) -> Self {
         let mut result = MaybeUninit::uninit();
         intrinsics::signed::isar3(&mut result, &self, rhs & 0xff);
@@ -1212,7 +1212,7 @@ impl I256 {
     ///     ),
     /// );
     /// ```
-    #[inline]
+    #[inline(always)]
     pub fn unsigned_abs(self) -> U256 {
         self.wrapping_abs().as_u256()
     }
@@ -1272,7 +1272,7 @@ impl I256 {
     /// ```
     #[must_use = "this returns the result of the operation, \
                   without modifying the original"]
-    #[inline]
+    #[inline(always)]
     pub fn overflowing_add(self, rhs: Self) -> (Self, bool) {
         let mut result = MaybeUninit::uninit();
         let overflow = intrinsics::signed::iaddc(&mut result, &self, &rhs);
@@ -1296,7 +1296,7 @@ impl I256 {
     /// ```
     #[must_use = "this returns the result of the operation, \
                   without modifying the original"]
-    #[inline]
+    #[inline(always)]
     pub fn overflowing_sub(self, rhs: Self) -> (Self, bool) {
         let mut result = MaybeUninit::uninit();
         let overflow = intrinsics::signed::isubc(&mut result, &self, &rhs);
@@ -1362,7 +1362,7 @@ impl I256 {
     /// ```
     #[must_use = "this returns the result of the operation, \
                   without modifying the original"]
-    #[inline]
+    #[inline(always)]
     pub fn overflowing_mul(self, rhs: Self) -> (Self, bool) {
         let mut result = MaybeUninit::uninit();
         let overflow = intrinsics::signed::imulc(&mut result, &self, &rhs);
@@ -1807,7 +1807,7 @@ impl I256 {
     /// assert_eq!(I256::new(0).signum(), 0);
     /// assert_eq!(I256::new(-10).signum(), -1);
     /// ```
-    #[inline]
+    #[inline(always)]
     pub const fn signum(self) -> Self {
         I256::new(self.signum128())
     }
