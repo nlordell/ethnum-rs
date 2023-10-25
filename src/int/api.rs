@@ -452,8 +452,7 @@ impl I256 {
     /// Basic usage:
     ///
     /// ```
-    /// # use ethnum::I256;
-    /// use ethnum::U256;
+    /// # use ethnum::{I256, U256};
     /// assert_eq!(I256::new(1).checked_add_unsigned(U256::new(2)), Some(I256::new(3)));
     /// assert_eq!((I256::MAX - 2).checked_add_unsigned(U256::new(3)), None);
     /// ```
@@ -501,8 +500,7 @@ impl I256 {
     /// Basic usage:
     ///
     /// ```
-    /// # use ethnum::I256;
-    /// use ethnum::U256;
+    /// # use ethnum::{I256, U256};
     /// assert_eq!(I256::new(1).checked_sub_unsigned(U256::new(2)), Some(I256::new(-1)));
     /// assert_eq!((I256::MIN + 2).checked_sub_unsigned(U256::new(3)), None);
     /// ```
@@ -806,8 +804,7 @@ impl I256 {
     /// Basic usage:
     ///
     /// ```
-    /// # use ethnum::I256;
-    /// use ethnum::U256;
+    /// # use ethnum::{I256, U256};
     /// assert_eq!(I256::new(1).saturating_add_unsigned(U256::new(2)), 3);
     /// assert_eq!(I256::MAX.saturating_add_unsigned(U256::new(100)), I256::MAX);
     /// ```
@@ -859,8 +856,7 @@ impl I256 {
     /// Basic usage:
     ///
     /// ```
-    /// # use ethnum::I256;
-    /// use ethnum::U256;
+    /// # use ethnum::{I256, U256};
     /// assert_eq!(I256::new(100).saturating_sub_unsigned(U256::new(127)), -27);
     /// assert_eq!(I256::MIN.saturating_sub_unsigned(U256::new(100)), I256::MIN);
     /// ```
@@ -1029,8 +1025,7 @@ impl I256 {
     /// Basic usage:
     ///
     /// ```
-    /// # use ethnum::I256;
-    /// use ethnum::U256;
+    /// # use ethnum::{I256, U256};
     /// assert_eq!(I256::new(100).wrapping_add_unsigned(U256::new(27)), 127);
     /// assert_eq!(I256::MAX.wrapping_add_unsigned(U256::new(2)), I256::MIN + 1);
     /// ```
@@ -1070,8 +1065,7 @@ impl I256 {
     /// Basic usage:
     ///
     /// ```
-    /// # use ethnum::I256;
-    /// use ethnum::U256;
+    /// # use ethnum::{I256, U256};
     /// assert_eq!(I256::new(0).wrapping_sub_unsigned(U256::new(127)), -127);
     /// assert_eq!(I256::new(-2).wrapping_sub_unsigned(U256::MAX), -1);
     /// ```
@@ -1428,8 +1422,7 @@ impl I256 {
     /// Basic usage:
     ///
     /// ```
-    /// # use ethnum::I256;
-    /// use ethnum::U256;
+    /// # use ethnum::{I256, U256};
     /// assert_eq!(I256::new(1).overflowing_add_unsigned(U256::new(2)), (I256::new(3), false));
     /// assert_eq!((I256::MIN).overflowing_add_unsigned(U256::MAX), (I256::MAX, false));
     /// assert_eq!((I256::MAX - 2).overflowing_add_unsigned(U256::new(3)), (I256::MIN, true));
@@ -1478,8 +1471,7 @@ impl I256 {
     /// Basic usage:
     ///
     /// ```
-    /// # use ethnum::I256;
-    /// use ethnum::U256;
+    /// # use ethnum::{I256, U256};
     /// assert_eq!(I256::new(1).overflowing_sub_unsigned(U256::new(2)), (I256::new(-1), false));
     /// assert_eq!((I256::MAX).overflowing_sub_unsigned(U256::MAX), (I256::MIN, false));
     /// assert_eq!((I256::MIN + 2).overflowing_sub_unsigned(U256::new(3)), (I256::MAX, true));
