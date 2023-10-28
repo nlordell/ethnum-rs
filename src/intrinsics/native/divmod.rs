@@ -167,6 +167,7 @@ pub fn udivmod4(
 #[inline]
 pub fn div_mod_knuth(u: &U256, v: &U256) -> (U256, U256) {
     const N_UDWORD_BITS: u32 = 128;
+    assert_ne!(*u.high(), 0, "The second operand must be greater than u128::MAX");
 
     #[inline]
     fn full_shl(a: &U256, shift: u32) -> [u128; 3] {
@@ -274,6 +275,14 @@ pub fn div_mod_knuth(u: &U256, v: &U256) -> (U256, U256) {
     let mut q = U256::ZERO;
     let v_n_1 = *v.high();
     let v_n_2 = *v.low();
+
+    if v_n_1 >> (N_UDWORD_BITS - 1) != 1 {
+        debug_assert!(false);
+
+        // safety: v_n_1 must be normalized because v has
+        // been checked to be non-zero.
+        unsafe { core::hint::unreachable_unchecked() }
+    }
 
     // D2. D7. - unrolled loop j == 0, n == 2, m == 0 (only one possible iteration)
     let mut r_hat: u128 = 0;
