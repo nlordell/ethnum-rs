@@ -101,10 +101,10 @@ pub fn udivmod4(
     // Unfortunately, there is no 256-bit equivalent on x86_64, but we can still
     // shortcut if the high and low values of the operands are 0:
     if a.high() | b.high() == 0 {
+        res.write(U256::from_words(0, a.low() / b.low()));
         if let Some(rem) = rem {
             rem.write(U256::from_words(0, a.low() % b.low()));
         }
-        res.write(U256::from_words(0, a.low() / b.low()));
         return;
     }
 
