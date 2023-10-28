@@ -10,7 +10,7 @@ mod parse;
 
 pub use self::convert::AsI256;
 use crate::uint::U256;
-use core::num::ParseIntError;
+use core::{num::ParseIntError, mem::MaybeUninit};
 
 /// A 256-bit signed integer type.
 #[derive(Clone, Copy, Default, Eq, Hash, PartialEq)]
@@ -272,6 +272,138 @@ impl I256 {
         let sign = self.signum128() as f64;
         self.unsigned_abs().as_f64() * sign
     }
+
+    /// todo
+    #[inline]
+    #[must_use = "this returns the result of the operation, \
+                  without modifying the original"]
+    pub fn div_rem(self, rhs: Self) -> (Self, Self) {
+        if rhs == 0 {
+            panic!("attempt to divide by zero");
+        }
+        #[cfg(debug_assertions)] // ideally this would use overflow check setting from caller
+        {
+            if self == Self::MIN && rhs == -1 {
+                panic!("attempt to divide with overflow")
+            }
+        }
+        let mut res: MaybeUninit<Self> = MaybeUninit::uninit();
+        let mut rem: MaybeUninit<Self> = MaybeUninit::uninit();
+        crate::intrinsics::idivmod4(&mut res, &self, &rhs, Some(&mut rem));
+        unsafe { ((res.assume_init()), (rem.assume_init())) }
+    }
+
+    // todo: double check overflow for euclid
+    /// todo
+    #[inline]
+    #[must_use = "this returns the result of the operation, \
+                  without modifying the original"]
+    pub fn div_rem_euclid(self, rhs: Self) -> (Self, Self) {
+        let (q, r) = self.div_rem(rhs);
+        if r < 0 {
+            if rhs > 0 {
+                (q - 1, r + rhs)
+            } else {
+                (q + 1, r - rhs)
+            }
+        } else {
+            (q, r)
+        }
+    }
+
+    /// todo
+    #[inline]
+    #[must_use = "this returns the result of the operation, \
+                  without modifying the original"]
+    pub fn checked_div_rem(self, rhs: Self) -> Option<(Self, Self)> {
+        if rhs == 0 || (self == Self::MIN && rhs == -1) {
+            None
+        } else {
+            let mut res: MaybeUninit<Self> = MaybeUninit::uninit();
+            let mut rem: MaybeUninit<Self> = MaybeUninit::uninit();
+            crate::intrinsics::idivmod4(&mut res, &self, &rhs, Some(&mut rem));
+            unsafe { Some(((res.assume_init()), (rem.assume_init()))) } // Is this enough parenthesis?
+        }
+    }
+
+    /// todo
+    #[inline]
+    #[must_use = "this returns the result of the operation, \
+                  without modifying the original"]
+    pub fn checked_div_rem_euclid(self, rhs: Self) -> Option<(Self, Self)> {
+        if rhs == 0 || (self == Self::MIN && rhs == -1) {
+            None
+        } else {
+            Some(self.div_rem_euclid(rhs))
+        }
+    }
+
+    /// todo
+    #[inline]
+    #[must_use = "this returns the result of the operation, \
+                  without modifying the original"]
+    pub fn saturating_div_rem(self, rhs: Self) -> (Self, Self) {
+        match self.overflowing_div_rem(rhs) {
+            (q, r, false) => (q, r),
+            (_q, r, true) => (Self::MAX, r), // MIN / -1 is the only possible saturating overflow
+        }
+    }
+
+    /// todo
+    #[inline]
+    #[must_use = "this returns the result of the operation, \
+                  without modifying the original"]
+    pub fn saturating_div_rem_euclid(self, rhs: Self) -> (Self, Self) {
+        match self.overflowing_div_rem_euclid(rhs) {
+            (q, r, false) => (q, r),
+            (_q, r, true) => (Self::MAX, r),
+        }
+    }
+
+    /// todo
+    #[inline]
+    #[must_use = "this returns the result of the operation, \
+                  without modifying the original"]
+    pub fn wrapping_div_rem(self, rhs: Self) -> (Self, Self) {
+        let (q, r, _) = self.overflowing_div_rem(rhs);
+        (q, r)
+    }
+
+    /// todo
+    #[inline]
+    #[must_use = "this returns the result of the operation, \
+                  without modifying the original"]
+    pub fn wrapping_div_rem_euclid(self, rhs: Self) -> (Self, Self) {
+        let (q, r, _) = self.overflowing_div_rem_euclid(rhs);
+        (q, r)
+    }
+
+    /// todo
+    #[inline]
+    #[must_use = "this returns the result of the operation, \
+                  without modifying the original"]
+    pub fn overflowing_div_rem(self, rhs: Self) -> (Self, Self, bool) {
+        if self == Self::MIN && rhs == -1 {
+            (self, Self::ZERO, true)
+        } else {
+            let (q, r) = self.div_rem(rhs);
+            (q, r, false)
+        }
+    }
+
+    /// todo
+    #[inline]
+    #[must_use = "this returns the result of the operation, \
+                  without modifying the original"]
+    pub fn overflowing_div_rem_euclid(self, rhs: Self) -> (Self, Self, bool) {
+        if self == Self::MIN && rhs == -1 {
+            (self, Self::ZERO, true)
+        } else {
+            let (q, r) = self.div_rem_euclid(rhs);
+            (q, r, false)
+        }
+    }
+    
 }
 
 #[cfg(test)]

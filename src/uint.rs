@@ -10,7 +10,7 @@ mod parse;
 
 pub use self::convert::AsU256;
 use crate::I256;
-use core::num::ParseIntError;
+use core::{num::ParseIntError, mem::MaybeUninit};
 
 /// A 256-bit unsigned integer type.
 #[derive(Clone, Copy, Default, Eq, Hash, PartialEq)]
@@ -274,6 +274,89 @@ impl U256 {
         const HI: u64 = 0x47f0000000000000;
         let (hi, lo) = self.into_words();
         (hi as f64) * f64::from_bits(HI) + (lo as f64)
+    }
+
+    /// todo
+    #[inline]
+    #[must_use = "this returns the result of the operation, \
+                  without modifying the original"]
+    pub fn div_rem(self, rhs: Self) -> (Self, Self) {
+        if rhs == 0 {
+            panic!("attempt to divide by zero");
+        }
+        let mut res: MaybeUninit<Self> = MaybeUninit::uninit();
+        let mut rem: MaybeUninit<Self> = MaybeUninit::uninit();
+        crate::intrinsics::udivmod4(&mut res, &self, &rhs, Some(&mut rem));
+        unsafe { ((res.assume_init()), (rem.assume_init())) }
+    }
+
+    /// todo
+    #[inline(always)]
+    #[must_use = "this returns the result of the operation, \
+                  without modifying the original"]
+    pub fn div_rem_euclid(self, rhs: Self) -> (Self, Self) {
+        self.div_rem(rhs)
+    }
+
+    /// todo
+    #[inline]
+    #[must_use = "this returns the result of the operation, \
+                  without modifying the original"]
+    pub fn checked_div_rem(self, rhs: Self) -> Option<(Self, Self)> {
+        if rhs == Self::ZERO {
+            None
+        } else {
+            Some(self.div_rem(rhs))
+        }
+    }
+
+    /// todo
+    #[inline(always)]
+    #[must_use = "this returns the result of the operation, \
+                  without modifying the original"]
+    pub fn checked_div_rem_euclid(self, rhs: Self) -> Option<(Self, Self)> {
+        self.checked_div_rem(rhs)
+    }
+
+    /// todo
+    #[inline(always)]
+    #[must_use = "this returns the result of the operation, \
+                  without modifying the original"]
+    pub fn saturating_div_rem(self, rhs: Self) -> (Self, Self) {
+        self.div_rem(rhs)
+    }
+
+    /// todo
+    #[inline(always)]
+    #[must_use = "this returns the result of the operation, \
+                  without modifying the original"]
+    pub fn saturating_div_rem_euclid(self, rhs: Self) -> (Self, Self) {
+        self.div_rem(rhs)
+    }
+
+    /// todo
+    #[inline(always)]
+    #[must_use = "this returns the result of the operation, \
+                  without modifying the original"]
+    pub fn wrapping_div_rem(self, rhs: Self) -> (Self, Self) {
+        self.div_rem(rhs)
+    }
+
+    /// todo
+    #[inline(always)]
+    #[must_use = "this returns the result of the operation, \
+                  without modifying the original"]
+    pub fn wrapping_div_rem_euclid(self, rhs: Self) -> (Self, Self) {
+        self.div_rem(rhs)
+    }
+
+    /// todo
+    #[inline(always)]
+    #[must_use = "this returns the result of the operation, \
+                  without modifying the original"]
+    pub fn overflowing_div_rem(self, rhs: Self) -> (Self, Self, bool) {
+        let (q, r) = self.div_rem(rhs);
+        (q, r, false)
     }
 }
 
