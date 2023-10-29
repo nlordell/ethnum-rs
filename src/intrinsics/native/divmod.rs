@@ -164,10 +164,15 @@ pub fn udivmod4(
 
 // See Knuth, TAOCP, Volume 2, section 4.3.1, Algorithm D.
 // https://skanthak.homepage.t-online.de/division.html
+// The high word of v (the divisor) must be non-zero.
 #[inline]
 pub fn div_mod_knuth(u: &U256, v: &U256) -> (U256, U256) {
     const N_UDWORD_BITS: u32 = 128;
-    assert_ne!(*u.high(), 0, "The second operand must be greater than u128::MAX");
+    assert_ne!(
+        *u.high(),
+        0,
+        "The second operand must be greater than u128::MAX"
+    );
 
     #[inline]
     fn full_shl(a: &U256, shift: u32) -> [u128; 3] {
@@ -267,7 +272,6 @@ pub fn div_mod_knuth(u: &U256, v: &U256) -> (U256, U256) {
     let shift = v.high().leading_zeros();
     debug_assert!(shift < N_UDWORD_BITS);
     let v = v << shift;
-    debug_assert!(v.high() >> (N_UDWORD_BITS - 1) == 1);
     // u will store the remainder (shifted)
     let mut u = full_shl(u, shift);
 
@@ -279,7 +283,7 @@ pub fn div_mod_knuth(u: &U256, v: &U256) -> (U256, U256) {
     if v_n_1 >> (N_UDWORD_BITS - 1) != 1 {
         debug_assert!(false);
 
-        // safety: v_n_1 must be normalized because v has
+        // SAFETY: `v_n_1` must be normalized because input `v` has
         // been checked to be non-zero.
         unsafe { core::hint::unreachable_unchecked() }
     }
