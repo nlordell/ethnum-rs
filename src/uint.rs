@@ -358,6 +358,15 @@ impl U256 {
         let (q, r) = self.div_rem(rhs);
         (q, r, false)
     }
+
+    /// todo
+    #[inline(always)]
+    #[must_use = "this returns the result of the operation, \
+                  without modifying the original"]
+    pub fn overflowing_div_rem_euclid(self, rhs: Self) -> (Self, Self, bool) {
+        let (q, r) = self.div_rem(rhs);
+        (q, r, false)
+    }
 }
 
 #[cfg(test)]
