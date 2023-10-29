@@ -166,9 +166,9 @@ pub fn udivmod4(
 // https://skanthak.homepage.t-online.de/division.html
 // The high word of v (the divisor) must be non-zero.
 #[inline]
-pub fn div_mod_knuth(u: &U256, v: &U256) -> (U256, U256) {
+fn div_mod_knuth(u: &U256, v: &U256) -> (U256, U256) {
     const N_UDWORD_BITS: u32 = 128;
-    assert_ne!(
+    debug_assert_ne!(
         *u.high(),
         0,
         "The second operand must be greater than u128::MAX"
