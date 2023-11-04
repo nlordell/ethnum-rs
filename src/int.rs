@@ -10,7 +10,7 @@ mod parse;
 
 pub use self::convert::AsI256;
 use crate::uint::U256;
-use core::{num::ParseIntError, mem::MaybeUninit};
+use core::{mem::MaybeUninit, num::ParseIntError};
 
 /// A 256-bit signed integer type.
 #[derive(Clone, Copy, Default, Eq, Hash, PartialEq)]
@@ -277,44 +277,37 @@ impl I256 {
     #[inline]
     #[must_use = "this returns the result of the operation, \
                   without modifying the original"]
+    #[track_caller]
     pub fn div_rem(self, rhs: Self) -> (Self, Self) {
-        if rhs == 0 {
-            panic!("attempt to divide by zero");
-        }
-        #[cfg(debug_assertions)] // ideally this would use overflow check setting from caller
+        #[cfg(debug_assertions)]
         {
             if self == Self::MIN && rhs == -1 {
                 panic!("attempt to divide with overflow")
             }
         }
-        let mut res: MaybeUninit<Self> = MaybeUninit::uninit();
-        let mut rem: MaybeUninit<Self> = MaybeUninit::uninit();
-        crate::intrinsics::idivmod4(&mut res, &self, &rhs, Some(&mut rem));
-        unsafe { ((res.assume_init()), (rem.assume_init())) }
+        self.wrapping_div_rem(rhs)
     }
 
-    // todo: double check overflow for euclid
     /// todo
     #[inline]
     #[must_use = "this returns the result of the operation, \
                   without modifying the original"]
+    #[track_caller]
     pub fn div_rem_euclid(self, rhs: Self) -> (Self, Self) {
-        let (q, r) = self.div_rem(rhs);
-        if r < 0 {
-            if rhs > 0 {
-                (q - 1, r + rhs)
-            } else {
-                (q + 1, r - rhs)
+        #[cfg(debug_assertions)]
+        {
+            if self == Self::MIN && rhs == -1 {
+                panic!("attempt to divide with overflow")
             }
-        } else {
-            (q, r)
         }
+        self.wrapping_div_rem_euclid(rhs)
     }
 
     /// todo
     #[inline]
     #[must_use = "this returns the result of the operation, \
                   without modifying the original"]
+    #[track_caller]
     pub fn checked_div_rem(self, rhs: Self) -> Option<(Self, Self)> {
         if rhs == 0 || (self == Self::MIN && rhs == -1) {
             None
@@ -330,11 +323,12 @@ impl I256 {
     #[inline]
     #[must_use = "this returns the result of the operation, \
                   without modifying the original"]
+    #[track_caller]
     pub fn checked_div_rem_euclid(self, rhs: Self) -> Option<(Self, Self)> {
         if rhs == 0 || (self == Self::MIN && rhs == -1) {
             None
         } else {
-            Some(self.div_rem_euclid(rhs))
+            Some(self.wrapping_div_rem_euclid(rhs))
         }
     }
 
@@ -342,6 +336,7 @@ impl I256 {
     #[inline]
     #[must_use = "this returns the result of the operation, \
                   without modifying the original"]
+    #[track_caller]
     pub fn saturating_div_rem(self, rhs: Self) -> (Self, Self) {
         match self.overflowing_div_rem(rhs) {
             (q, r, false) => (q, r),
@@ -353,6 +348,7 @@ impl I256 {
     #[inline]
     #[must_use = "this returns the result of the operation, \
                   without modifying the original"]
+    #[track_caller]
     pub fn saturating_div_rem_euclid(self, rhs: Self) -> (Self, Self) {
         match self.overflowing_div_rem_euclid(rhs) {
             (q, r, false) => (q, r),
@@ -360,33 +356,86 @@ impl I256 {
         }
     }
 
-    /// todo
+    /// ```
+    /// # use ethnum::I256;
+    /// assert_eq!(I256::from(22).wrapping_div_rem(I256::from(5)), (I256::from(4), I256::from(2)));
+    /// assert_eq!(I256::from(-22).wrapping_div_rem(I256::from(5)), (I256::from(-4), I256::from(-2)));
+    /// assert_eq!(I256::from(22).wrapping_div_rem(I256::from(-5)), (I256::from(-4), I256::from(2)));
+    /// assert_eq!(I256::from(-22).wrapping_div_rem(I256::from(-5)), (I256::from(4), I256::from(-2)));
+    ///
+    /// assert_eq!(I256::MIN.wrapping_div_rem(I256::MINUS_ONE), (I256::MIN, I256::ZERO));
+    /// ```
     #[inline]
     #[must_use = "this returns the result of the operation, \
                   without modifying the original"]
+    #[track_caller]
     pub fn wrapping_div_rem(self, rhs: Self) -> (Self, Self) {
-        let (q, r, _) = self.overflowing_div_rem(rhs);
-        (q, r)
+        if rhs == 0 {
+            panic!("attempt to divide by zero");
+        }
+        let mut res: MaybeUninit<Self> = MaybeUninit::uninit();
+        let mut rem: MaybeUninit<Self> = MaybeUninit::uninit();
+        crate::intrinsics::idivmod4(&mut res, &self, &rhs, Some(&mut rem));
+        unsafe { ((res.assume_init()), (rem.assume_init())) }
     }
 
-    /// todo
+    /// ```
+    /// # use ethnum::I256;
+    /// assert_eq!(I256::from(22).wrapping_div_rem_euclid(I256::from(5)), (I256::from(4), I256::from(2)));
+    /// assert_eq!(I256::from(-22).wrapping_div_rem_euclid(I256::from(5)), (I256::from(-5), I256::from(3)));
+    /// assert_eq!(I256::from(22).wrapping_div_rem_euclid(I256::from(-5)), (I256::from(-4), I256::from(2)));
+    /// assert_eq!(I256::from(-22).wrapping_div_rem_euclid(I256::from(-5)), (I256::from(5), I256::from(3)));
+    ///
+    /// assert_eq!(I256::MIN.wrapping_div_rem(I256::MINUS_ONE), (I256::MIN, I256::ZERO));
+    /// ```
+    /// ``` should_panic (expected = "attempt to divide by zero")
+    /// # use ethnum::I256;
+    /// let _ = I256::from(22).wrapping_div_rem_euclid(I256::ZERO);
+    /// ```
     #[inline]
     #[must_use = "this returns the result of the operation, \
                   without modifying the original"]
+    #[track_caller]
     pub fn wrapping_div_rem_euclid(self, rhs: Self) -> (Self, Self) {
-        let (q, r, _) = self.overflowing_div_rem_euclid(rhs);
-        (q, r)
+        let dividend_sign = self.is_negative();
+        let divisor_sign = rhs.is_negative();
+        let quotient_sign = dividend_sign ^ divisor_sign;
+        let abs_dividend = self.unsigned_abs();
+        let abs_divisor = rhs.unsigned_abs();
+
+        let (q, r) = abs_dividend.div_rem(abs_divisor);
+        let mut quotient = q.as_i256();
+        let mut remainder = r.as_i256();
+
+        let adjust_remainder = dividend_sign && remainder != 0;
+        if adjust_remainder {
+            remainder = abs_divisor.as_i256().wrapping_sub(remainder);
+        }
+
+        if quotient_sign {
+            quotient = !quotient; // first step of a negation
+        }
+        if quotient_sign ^ adjust_remainder {
+            quotient += 1;
+        }
+
+        if remainder.is_negative() {
+            unsafe { core::hint::unreachable_unchecked() }
+        }
+
+        (quotient, remainder)
     }
 
     /// todo
     #[inline]
     #[must_use = "this returns the result of the operation, \
                   without modifying the original"]
+    #[track_caller]
     pub fn overflowing_div_rem(self, rhs: Self) -> (Self, Self, bool) {
         if self == Self::MIN && rhs == -1 {
             (self, Self::ZERO, true)
         } else {
-            let (q, r) = self.div_rem(rhs);
+            let (q, r) = self.wrapping_div_rem(rhs);
             (q, r, false)
         }
     }
@@ -395,15 +444,15 @@ impl I256 {
     #[inline]
     #[must_use = "this returns the result of the operation, \
                   without modifying the original"]
+    #[track_caller]
     pub fn overflowing_div_rem_euclid(self, rhs: Self) -> (Self, Self, bool) {
         if self == Self::MIN && rhs == -1 {
             (self, Self::ZERO, true)
         } else {
-            let (q, r) = self.div_rem_euclid(rhs);
+            let (q, r) = self.wrapping_div_rem_euclid(rhs);
             (q, r, false)
         }
     }
-    
 }
 
 #[cfg(test)]

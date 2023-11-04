@@ -280,20 +280,38 @@ impl U256 {
     #[inline]
     #[must_use = "this returns the result of the operation, \
                   without modifying the original"]
+    #[track_caller]
     pub fn div_rem(self, rhs: Self) -> (Self, Self) {
         if rhs == 0 {
             panic!("attempt to divide by zero");
         }
+
         let mut res: MaybeUninit<Self> = MaybeUninit::uninit();
         let mut rem: MaybeUninit<Self> = MaybeUninit::uninit();
         crate::intrinsics::udivmod4(&mut res, &self, &rhs, Some(&mut rem));
-        unsafe { ((res.assume_init()), (rem.assume_init())) }
+        let ret = unsafe { ((res.assume_init()), (rem.assume_init())) };
+
+        // This helps the optimizer figure out when it can use smaller
+        // operands for later functions.
+        // SAFETY: Relies on the fact that rhs is at least 1.
+        if ret.1 >= rhs {
+            unsafe { core::hint::unreachable_unchecked() }
+        }
+        if ret.1 > self {
+            unsafe { core::hint::unreachable_unchecked() }
+        }
+        if ret.0 > self {
+            unsafe { core::hint::unreachable_unchecked() }
+        }
+
+        ret
     }
 
     /// todo
     #[inline(always)]
     #[must_use = "this returns the result of the operation, \
                   without modifying the original"]
+    #[track_caller]
     pub fn div_rem_euclid(self, rhs: Self) -> (Self, Self) {
         self.div_rem(rhs)
     }
@@ -302,6 +320,7 @@ impl U256 {
     #[inline]
     #[must_use = "this returns the result of the operation, \
                   without modifying the original"]
+    #[track_caller]
     pub fn checked_div_rem(self, rhs: Self) -> Option<(Self, Self)> {
         if rhs == Self::ZERO {
             None
@@ -314,6 +333,7 @@ impl U256 {
     #[inline(always)]
     #[must_use = "this returns the result of the operation, \
                   without modifying the original"]
+    #[track_caller]
     pub fn checked_div_rem_euclid(self, rhs: Self) -> Option<(Self, Self)> {
         self.checked_div_rem(rhs)
     }
@@ -322,6 +342,7 @@ impl U256 {
     #[inline(always)]
     #[must_use = "this returns the result of the operation, \
                   without modifying the original"]
+    #[track_caller]
     pub fn saturating_div_rem(self, rhs: Self) -> (Self, Self) {
         self.div_rem(rhs)
     }
@@ -330,6 +351,7 @@ impl U256 {
     #[inline(always)]
     #[must_use = "this returns the result of the operation, \
                   without modifying the original"]
+    #[track_caller]
     pub fn saturating_div_rem_euclid(self, rhs: Self) -> (Self, Self) {
         self.div_rem(rhs)
     }
@@ -338,6 +360,7 @@ impl U256 {
     #[inline(always)]
     #[must_use = "this returns the result of the operation, \
                   without modifying the original"]
+    #[track_caller]
     pub fn wrapping_div_rem(self, rhs: Self) -> (Self, Self) {
         self.div_rem(rhs)
     }
@@ -346,6 +369,7 @@ impl U256 {
     #[inline(always)]
     #[must_use = "this returns the result of the operation, \
                   without modifying the original"]
+    #[track_caller]
     pub fn wrapping_div_rem_euclid(self, rhs: Self) -> (Self, Self) {
         self.div_rem(rhs)
     }
@@ -354,6 +378,7 @@ impl U256 {
     #[inline(always)]
     #[must_use = "this returns the result of the operation, \
                   without modifying the original"]
+    #[track_caller]
     pub fn overflowing_div_rem(self, rhs: Self) -> (Self, Self, bool) {
         let (q, r) = self.div_rem(rhs);
         (q, r, false)
@@ -363,6 +388,7 @@ impl U256 {
     #[inline(always)]
     #[must_use = "this returns the result of the operation, \
                   without modifying the original"]
+    #[track_caller]
     pub fn overflowing_div_rem_euclid(self, rhs: Self) -> (Self, Self, bool) {
         let (q, r) = self.div_rem(rhs);
         (q, r, false)
