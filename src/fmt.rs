@@ -104,8 +104,9 @@ pub(crate) fn fmt_u256(mut n: U256, is_nonnegative: bool, f: &mut fmt::Formatter
     unsafe {
         // eagerly decode 4 characters at a time
         while n >= 10000 {
-            let rem = (n % 10000).as_isize();
-            n /= 10000;
+            let (q, r) = n.div_rem(U256::new(10000));
+            n = q;
+            let rem = r.as_isize();
 
             let d1 = (rem / 100) << 1;
             let d2 = (rem % 100) << 1;
