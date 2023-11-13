@@ -10,11 +10,11 @@ mod parse;
 
 pub use self::convert::AsU256;
 use crate::I256;
-use core::{num::ParseIntError, mem::MaybeUninit};
+use core::{mem::MaybeUninit, num::ParseIntError};
 
 /// A 256-bit unsigned integer type.
 #[derive(Clone, Copy, Default, Eq, Hash, PartialEq)]
-#[repr(transparent)]
+#[repr(align(32))]
 pub struct U256(pub [u128; 2]);
 
 impl U256 {
@@ -276,14 +276,35 @@ impl U256 {
         (hi as f64) * f64::from_bits(HI) + (lo as f64)
     }
 
-    /// todo
+    /// Performs integer and division and returns the quotient and the remainder as a tuple. This is faster than computing the quotient and remainder separately.
+    ///
+    /// # Panics
+    ///
+    /// This function will panic if `rhs` is 0.
+    ///
+    /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    /// ```
+    /// # use ethnum::U256;
+    /// assert_eq!(U256::new(7).div_rem(U256::new(4)), (U256::new(1), U256::new(3)));
+    /// ```
     #[inline]
     #[must_use = "this returns the result of the operation, \
                   without modifying the original"]
     #[track_caller]
     pub fn div_rem(self, rhs: Self) -> (Self, Self) {
         if rhs == 0 {
+            if rhs > 0 {
+                // The optimizer understands inequalities better
+                unsafe { core::hint::unreachable_unchecked() }
+            }
             panic!("attempt to divide by zero");
+        }
+        if rhs <= 0 {
+            // The optimizer understands inequalities better
+            unsafe { core::hint::unreachable_unchecked() }
         }
 
         let mut res: MaybeUninit<Self> = MaybeUninit::uninit();
@@ -307,7 +328,23 @@ impl U256 {
         ret
     }
 
-    /// todo
+    /// Performs Euclidean division.
+    ///
+    /// Since, for the positive integers, all common definitions of division are
+    /// equal, this is exactly equal to `self.div_rem(rhs)`.
+    ///
+    /// # Panics
+    ///
+    /// This function will panic if `rhs` is 0.
+    ///
+    /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    /// ```
+    /// # use ethnum::U256;
+    /// assert_eq!(U256::new(7).div_rem_euclid(U256::new(4)), (U256::new(1), U256::new(3)));
+    /// ```
     #[inline(always)]
     #[must_use = "this returns the result of the operation, \
                   without modifying the original"]
@@ -316,29 +353,74 @@ impl U256 {
         self.div_rem(rhs)
     }
 
-    /// todo
+    /// Checked integer division. Computes `self.div_rem(rhs)`, returning `None` if
+    /// `rhs == 0`.
+    ///
+    /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    /// ```
+    /// # use ethnum::U256;
+    /// assert_eq!(U256::new(128).checked_div_rem(U256::new(2)), Some((U256::new(64), U256::new(0))));
+    /// assert_eq!(U256::new(1).checked_div_rem(U256::new(0)), None);
+    /// ```
     #[inline]
     #[must_use = "this returns the result of the operation, \
                   without modifying the original"]
-    #[track_caller]
     pub fn checked_div_rem(self, rhs: Self) -> Option<(Self, Self)> {
         if rhs == Self::ZERO {
+            if rhs > 0 {
+                // The optimizer understands inequalities better
+                unsafe { core::hint::unreachable_unchecked() }
+            }
+
             None
         } else {
+            if rhs <= 0 {
+                // The optimizer understands inequalities better
+                unsafe { core::hint::unreachable_unchecked() }
+            }
+
             Some(self.div_rem(rhs))
         }
     }
 
-    /// todo
+    /// Checked Euclidean division. Computes `self.div_rem_euclid(rhs)`, returning `None` if
+    /// `rhs == 0`.
+    ///
+    /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    /// ```
+    /// # use ethnum::U256;
+    /// assert_eq!(U256::new(128).checked_div_rem_euclid(U256::new(2)), Some((U256::new(64), U256::new(0))));
+    /// assert_eq!(U256::new(1).checked_div_rem_euclid(U256::new(0)), None);
+    /// ```
     #[inline(always)]
     #[must_use = "this returns the result of the operation, \
                   without modifying the original"]
-    #[track_caller]
     pub fn checked_div_rem_euclid(self, rhs: Self) -> Option<(Self, Self)> {
         self.checked_div_rem(rhs)
     }
 
-    /// todo
+    /// Saturating integer division. Computes `self.div_rem(rhs)`, saturating at the
+    /// numeric bounds instead of overflowing.
+    ///
+    /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    /// ```
+    /// # use ethnum::U256;
+    /// assert_eq!(U256::new(5).saturating_div_rem(U256::new(2)), (U256::new(2), U256::new(1)));
+    /// ```
+    ///
+    /// ```should_panic
+    /// # use ethnum::U256;
+    /// let _ = U256::new(1).saturating_div_rem(U256::ZERO);
+    /// ```
     #[inline(always)]
     #[must_use = "this returns the result of the operation, \
                   without modifying the original"]
@@ -347,7 +429,22 @@ impl U256 {
         self.div_rem(rhs)
     }
 
-    /// todo
+    /// Saturating integer division. Computes `self.div_rem_euclid(rhs)`, saturating at the
+    /// numeric bounds instead of overflowing.
+    ///
+    /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    /// ```
+    /// # use ethnum::U256;
+    /// assert_eq!(U256::new(5).saturating_div_rem_euclid(U256::new(2)), (U256::new(2), U256::new(1)));
+    /// ```
+    ///
+    /// ```should_panic
+    /// # use ethnum::U256;
+    /// let _ = U256::new(1).saturating_div_rem_euclid(U256::ZERO);
+    /// ```
     #[inline(always)]
     #[must_use = "this returns the result of the operation, \
                   without modifying the original"]
@@ -356,7 +453,23 @@ impl U256 {
         self.div_rem(rhs)
     }
 
-    /// todo
+    /// Wrapping (modular) division. Computes `self.div_rem(rhs)`. Wrapped division on
+    /// unsigned types is just normal division. There's no way wrapping could
+    /// ever happen. This function exists, so that all operations are accounted
+    /// for in the wrapping operations.
+    ///
+    /// # Panics
+    ///
+    /// This function will panic if `rhs` is 0.
+    ///
+    /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    /// ```
+    /// # use ethnum::U256;
+    /// assert_eq!(U256::new(100).wrapping_div_rem(U256::new(10)), (U256::new(10), U256::new(0)));
+    /// ```
     #[inline(always)]
     #[must_use = "this returns the result of the operation, \
                   without modifying the original"]
@@ -365,7 +478,24 @@ impl U256 {
         self.div_rem(rhs)
     }
 
-    /// todo
+    /// Wrapping Euclidean division. Computes `self.div_rem_euclid(rhs)`. Wrapped division on
+    /// unsigned types is just normal division. There's no way wrapping could
+    /// ever happen. This function exists, so that all operations are accounted
+    /// for in the wrapping operations. Since, for the positive integers, all common
+    /// definitions of division are equal, this is exactly equal to `self.div_rem(rhs)`.
+    ///
+    /// # Panics
+    ///
+    /// This function will panic if `rhs` is 0.
+    ///
+    /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    /// ```
+    /// # use ethnum::U256;
+    /// assert_eq!(U256::new(100).wrapping_div_rem_euclid(U256::new(10)), (U256::new(10), U256::new(0)));
+    /// ```
     #[inline(always)]
     #[must_use = "this returns the result of the operation, \
                   without modifying the original"]
@@ -374,7 +504,24 @@ impl U256 {
         self.div_rem(rhs)
     }
 
-    /// todo
+    /// Calculates the quotient and the remainder when `self` is divided by `rhs`.
+    ///
+    /// Returns a tuple of the divisor and the remainder along with a boolean indicating whether
+    /// an arithmetic overflow would occur. Note that for unsigned integers
+    /// overflow never occurs, so the second value is always `false`.
+    ///
+    /// # Panics
+    ///
+    /// This function will panic if `rhs` is 0.
+    ///
+    /// # Examples
+    ///
+    /// Basic usage
+    ///
+    /// ```
+    /// # use ethnum::U256;
+    /// assert_eq!(U256::new(5).overflowing_div_rem(U256::new(2)), (U256::new(2), U256::new(1), false));
+    /// ```
     #[inline(always)]
     #[must_use = "this returns the result of the operation, \
                   without modifying the original"]
@@ -384,7 +531,26 @@ impl U256 {
         (q, r, false)
     }
 
-    /// todo
+    /// Calculates the quotient of Euclidean division `self.div_rem_euclid(rhs)`.
+    ///
+    /// Returns a tuple of the divisor along with a boolean indicating whether
+    /// an arithmetic overflow would occur. Note that for unsigned integers
+    /// overflow never occurs, so the second value is always `false`.  Since,
+    /// for the positive integers, all common definitions of division are equal,
+    /// this is exactly equal to `self.div_rem(rhs)`.
+    ///
+    /// # Panics
+    ///
+    /// This function will panic if `rhs` is 0.
+    ///
+    /// # Examples
+    ///
+    /// Basic usage
+    ///
+    /// ```
+    /// # use ethnum::U256;
+    /// assert_eq!(U256::new(5).overflowing_div_rem_euclid(U256::new(2)), (U256::new(2), U256::new(1), false));
+    /// ```
     #[inline(always)]
     #[must_use = "this returns the result of the operation, \
                   without modifying the original"]
