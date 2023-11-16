@@ -50,8 +50,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     let mut build = Build::new();
     build.compiler(&clang).file(intrinsics_ir_path).opt_level(3);
 
-    let linker_plugin_lto =
-        matches!(env::var("RUSTFLAGS"), Ok(flags) if flags.contains("-Clinker-plugin-lto"));
+    let linker_plugin_lto = matches!(env::var("CARGO_ENCODED_RUSTFLAGS"), Ok(flags) if flags.contains("-Clinker-plugin-lto"));
     if linker_plugin_lto {
         build.flag("-flto=thin");
     }
