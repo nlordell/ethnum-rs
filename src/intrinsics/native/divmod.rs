@@ -10,32 +10,52 @@
 //! - unsigned division: <https://github.com/llvm/llvm-project/blob/main/compiler-rt/lib/builtins/udivmodti4.c>
 
 use crate::{int::I256, uint::U256};
-use core::mem::MaybeUninit;
+use core::{mem::MaybeUninit, num::NonZeroU128};
 
 #[inline(always)]
-fn udiv256_by_128_to_128(u1: u128, u0: u128, mut v: u128, r: &mut u128) -> u128 {
+fn udiv256_by_128_to_128(u1: u128, u0: u128, mut v: NonZeroU128, r: &mut u128) -> u128 {
     const N_UDWORD_BITS: u32 = 128;
+
+    #[inline]
+    unsafe fn shl_nz(x: NonZeroU128, n: u32) -> NonZeroU128 {
+        debug_assert!(n < N_UDWORD_BITS);
+        let res: u128 = x.get() << n;
+        debug_assert_ne!(res, 0);
+        NonZeroU128::new_unchecked(res)
+    }
+
+    #[inline]
+    unsafe fn shr_nz(x: NonZeroU128, n: u32) -> NonZeroU128 {
+        debug_assert!(n < N_UDWORD_BITS);
+        let res: u128 = x.get() >> n;
+        debug_assert_ne!(res, 0);
+        NonZeroU128::new_unchecked(res)
+    }
+
     const B: u128 = 1 << (N_UDWORD_BITS / 2); // Number base (128 bits)
     let (un1, un0): (u128, u128); // Norm. dividend LSD's
-    let (vn1, vn0): (u128, u128); // Norm. divisor digits
+    let (vn1, vn0): (NonZeroU128, u128); // Norm. divisor digits
     let (mut q1, mut q0): (u128, u128); // Quotient digits
     let (un128, un21, un10): (u128, u128, u128); // Dividend digit pairs
 
+    debug_assert!(v.get() > u1);
+
     let s = v.leading_zeros();
+    debug_assert_ne!(s, N_UDWORD_BITS);
     if s > 0 {
         // Normalize the divisor.
-        v <<= s;
+        v = unsafe { shl_nz(v, s) };
         un128 = (u1 << s) | (u0 >> (N_UDWORD_BITS - s));
         un10 = u0 << s; // Shift dividend left
     } else {
-        // Avoid undefined behavior of (u0 >> 64).
+        // Avoid undefined behavior of (u0 >> 128).
         un128 = u1;
         un10 = u0;
     }
 
     // Break divisor up into two 64-bit digits.
-    vn1 = v >> (N_UDWORD_BITS / 2);
-    vn0 = v & 0xFFFF_FFFF_FFFF_FFFF;
+    vn1 = unsafe { shr_nz(v, N_UDWORD_BITS / 2) };
+    vn0 = v.get() & 0xFFFF_FFFF_FFFF_FFFF;
 
     // Break right half of dividend into two digits.
     un1 = un10 >> (N_UDWORD_BITS / 2);
@@ -43,12 +63,12 @@ fn udiv256_by_128_to_128(u1: u128, u0: u128, mut v: u128, r: &mut u128) -> u128 
 
     // Compute the first quotient digit, q1.
     q1 = un128 / vn1;
-    let mut rhat = un128 - q1 * vn1;
+    let mut rhat = un128 - q1 * vn1.get();
 
     // q1 has at most error 2. No more than 2 iterations.
     while q1 >= B || q1 * vn0 > B * rhat + un1 {
         q1 -= 1;
-        rhat += vn1;
+        rhat += vn1.get();
         if rhat >= B {
             break;
         }
@@ -57,16 +77,16 @@ fn udiv256_by_128_to_128(u1: u128, u0: u128, mut v: u128, r: &mut u128) -> u128 
     un21 = un128
         .wrapping_mul(B)
         .wrapping_add(un1)
-        .wrapping_sub(q1.wrapping_mul(v));
+        .wrapping_sub(q1.wrapping_mul(v.get()));
 
     // Compute the second quotient digit.
     q0 = un21 / vn1;
-    rhat = un21 - q0 * vn1;
+    rhat = un21 - q0 * vn1.get();
 
     // q0 has at most error 2. No more than 2 iterations.
     while q0 >= B || q0 * vn0 > B * rhat + un0 {
         q0 -= 1;
-        rhat += vn1;
+        rhat += vn1.get();
         if rhat >= B {
             break;
         }
@@ -75,7 +95,7 @@ fn udiv256_by_128_to_128(u1: u128, u0: u128, mut v: u128, r: &mut u128) -> u128 
     *r = (un21
         .wrapping_mul(B)
         .wrapping_add(un0)
-        .wrapping_sub(q0.wrapping_mul(v)))
+        .wrapping_sub(q0.wrapping_mul(v.get())))
         >> s;
     q1 * B + q0
 }
@@ -101,10 +121,10 @@ pub fn udivmod4(
     // Unfortunately, there is no 256-bit equivalent on x86_64, but we can still
     // shortcut if the high and low values of the operands are 0:
     if a.high() | b.high() == 0 {
+        res.write(U256::from_words(0, a.low() / b.low()));
         if let Some(rem) = rem {
             rem.write(U256::from_words(0, a.low() % b.low()));
         }
-        res.write(U256::from_words(0, a.low() / b.low()));
         return;
     }
 
@@ -130,7 +150,8 @@ pub fn udivmod4(
                 udiv256_by_128_to_128(
                     *dividend.high(),
                     *dividend.low(),
-                    *divisor.low(),
+                    // SAFETY: dividend.high() < divisor.low()
+                    unsafe { NonZeroU128::new_unchecked(*divisor.low()) },
                     remainder.low_mut(),
                 ),
             );
@@ -142,7 +163,8 @@ pub fn udivmod4(
                 udiv256_by_128_to_128(
                     dividend.high() % divisor.low(),
                     *dividend.low(),
-                    *divisor.low(),
+                    // SAFETY: dividend.high() / divisor.low()
+                    unsafe { NonZeroU128::new_unchecked(*divisor.low()) },
                     remainder.low_mut(),
                 ),
             );
@@ -154,7 +176,8 @@ pub fn udivmod4(
         return;
     }
 
-    (quotient, remainder) = div_mod_knuth(&dividend, &divisor);
+    // SAFETY: `*divisor.high() != 0`
+    (quotient, remainder) = unsafe { div_mod_knuth(&dividend, &divisor) };
 
     if let Some(rem) = rem {
         rem.write(remainder);
@@ -164,9 +187,18 @@ pub fn udivmod4(
 
 // See Knuth, TAOCP, Volume 2, section 4.3.1, Algorithm D.
 // https://skanthak.homepage.t-online.de/division.html
+// SAFETY: The high word of v (the divisor) must be non-zero.
 #[inline]
-pub fn div_mod_knuth(u: &U256, v: &U256) -> (U256, U256) {
+unsafe fn div_mod_knuth(u: &U256, v: &U256) -> (U256, U256) {
     const N_UDWORD_BITS: u32 = 128;
+    debug_assert_ne!(
+        *u.high(),
+        0,
+        "The second operand must be greater than u128::MAX"
+    );
+    if *u.high() == 0 {
+        unsafe { core::hint::unreachable_unchecked() }
+    }
 
     #[inline]
     fn full_shl(a: &U256, shift: u32) -> [u128; 3] {
@@ -266,7 +298,6 @@ pub fn div_mod_knuth(u: &U256, v: &U256) -> (U256, U256) {
     let shift = v.high().leading_zeros();
     debug_assert!(shift < N_UDWORD_BITS);
     let v = v << shift;
-    debug_assert!(v.high() >> (N_UDWORD_BITS - 1) == 1);
     // u will store the remainder (shifted)
     let mut u = full_shl(u, shift);
 
@@ -274,6 +305,14 @@ pub fn div_mod_knuth(u: &U256, v: &U256) -> (U256, U256) {
     let mut q = U256::ZERO;
     let v_n_1 = *v.high();
     let v_n_2 = *v.low();
+
+    if v_n_1 >> (N_UDWORD_BITS - 1) != 1 {
+        debug_assert!(false);
+
+        // SAFETY: `v_n_1` must be normalized because input `v` has
+        // been checked to be non-zero.
+        unsafe { core::hint::unreachable_unchecked() }
+    }
 
     // D2. D7. - unrolled loop j == 0, n == 2, m == 0 (only one possible iteration)
     let mut r_hat: u128 = 0;
@@ -286,7 +325,12 @@ pub fn div_mod_knuth(u: &U256, v: &U256) -> (U256, U256) {
     // Theorem B: q_hat >= q_j >= q_hat - 2
     let mut q_hat = if u_jn < v_n_1 {
         //let (mut q_hat, mut r_hat) = _div_mod_u128(u_jn, u[j + n - 1], v_n_1);
-        let mut q_hat = udiv256_by_128_to_128(u_jn, u[1], v_n_1, &mut r_hat);
+        let mut q_hat = udiv256_by_128_to_128(
+            u_jn,
+            u[1],
+            unsafe { NonZeroU128::new_unchecked(v_n_1) },
+            &mut r_hat,
+        );
         let mut overflow: bool;
         // this loop takes at most 2 iterations
         loop {
