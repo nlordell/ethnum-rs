@@ -14,7 +14,7 @@ use core::{mem::MaybeUninit, num::ParseIntError};
 
 /// A 256-bit signed integer type.
 #[derive(Clone, Copy, Default, Eq, Hash, PartialEq)]
-#[repr(align(32))]
+#[repr(transparent)]
 pub struct I256(pub [i128; 2]);
 
 impl I256 {
@@ -408,10 +408,6 @@ impl I256 {
     /// Saturating integer division. Computes `self.div_rem(rhs)`, saturating at the
     /// numeric bounds instead of overflowing.
     ///
-    /// # Panics
-    ///
-    /// This function will panic if `rhs` is 0.
-    ///
     /// # Examples
     ///
     /// Basic usage:
@@ -421,6 +417,10 @@ impl I256 {
     /// assert_eq!(I256::new(5).saturating_div_rem(I256::new(2)), (I256::new(2), I256::new(1)));
     /// assert_eq!(I256::MAX.saturating_div_rem(I256::new(-1)), (I256::MIN + 1, I256::new(0)));
     /// assert_eq!(I256::MIN.saturating_div_rem(I256::new(-1)), (I256::MAX, I256::new(0)));
+    /// ```
+    /// ```should_panic (expected = "attempt to divide by zero")
+    /// # use ethnum::I256;
+    /// let _ = I256::new(1).saturating_div_rem(I256::ZERO);
     /// ```
     #[inline]
     #[must_use = "this returns the result of the operation, \
@@ -436,10 +436,6 @@ impl I256 {
     /// Saturating integer division. Computes `self.div_rem_euclid(rhs)`, saturating at the
     /// numeric bounds instead of overflowing.
     ///
-    /// # Panics
-    ///
-    /// This function will panic if `rhs` is 0.
-    ///
     /// # Examples
     ///
     /// Basic usage:
@@ -449,6 +445,10 @@ impl I256 {
     /// assert_eq!(I256::new(5).saturating_div_rem_euclid(I256::new(2)), (I256::new(2), I256::new(1)));
     /// assert_eq!(I256::MAX.saturating_div_rem_euclid(I256::new(-1)), (I256::MIN + 1, I256::new(0)));
     /// assert_eq!(I256::MIN.saturating_div_rem_euclid(I256::new(-1)), (I256::MAX, I256::new(0)));
+    /// ```
+    /// ```should_panic (expected = "attempt to divide by zero")
+    /// # use ethnum::I256;
+    /// let _ = I256::new(1).saturating_div_rem_euclid(I256::ZERO);
     /// ```
     #[inline]
     #[must_use = "this returns the result of the operation, \

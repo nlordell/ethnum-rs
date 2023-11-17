@@ -14,7 +14,7 @@ use core::{mem::MaybeUninit, num::ParseIntError};
 
 /// A 256-bit unsigned integer type.
 #[derive(Clone, Copy, Default, Eq, Hash, PartialEq)]
-#[repr(align(32))]
+#[repr(transparent)]
 pub struct U256(pub [u128; 2]);
 
 impl U256 {
@@ -417,7 +417,7 @@ impl U256 {
     /// assert_eq!(U256::new(5).saturating_div_rem(U256::new(2)), (U256::new(2), U256::new(1)));
     /// ```
     ///
-    /// ```should_panic
+    /// ```should_panic (expected = "attempt to divide by zero")
     /// # use ethnum::U256;
     /// let _ = U256::new(1).saturating_div_rem(U256::ZERO);
     /// ```
@@ -441,7 +441,7 @@ impl U256 {
     /// assert_eq!(U256::new(5).saturating_div_rem_euclid(U256::new(2)), (U256::new(2), U256::new(1)));
     /// ```
     ///
-    /// ```should_panic
+    /// ```should_panic (expected = "attempt to divide by zero")
     /// # use ethnum::U256;
     /// let _ = U256::new(1).saturating_div_rem_euclid(U256::ZERO);
     /// ```
