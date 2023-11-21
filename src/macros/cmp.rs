@@ -11,6 +11,17 @@ macro_rules! impl_cmp {
             }
         }
 
+        impl PartialEq for $int {
+            #[inline]
+            fn eq(&self, other: &Self) -> bool {
+                let (ahi, alo) = self.into_words();
+                let (bhi, blo) = other.into_words();
+                (ahi == bhi) & (alo == blo)
+                // bitwise and rather than logical and
+                // to make O0 code more effecient.
+            }
+        }
+
         impl PartialEq<$prim> for $int {
             #[inline]
             fn eq(&self, other: &$prim) -> bool {
