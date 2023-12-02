@@ -41,6 +41,17 @@ fn arithmetic(c: &mut Criterion) {
         }
     };
 
+    #[allow(dead_code)]
+    fn name_fn(x: U256) -> String {
+        let n = x.leading_zeros() / 64;
+        match n {
+            0 => String::from("####"),
+            1 => String::from("###"),
+            2 => String::from("##"),
+            _ => String::from("#"),
+        }
+    }
+
     c.bench_function("U256::add", |b| {
         b.iter(|| black_box(nums[0]) + black_box(nums[1]))
     });
@@ -60,14 +71,92 @@ fn arithmetic(c: &mut Criterion) {
         );
     }
 
+    #[cfg(not(feature = "extra-muls"))]
     c.bench_function("U256::mul", |b| {
         b.iter(|| black_box(nums[3]) * black_box(nums[5]))
     });
 
-    #[cfg(not(feature = "primitive-types"))]
+    #[cfg(not(any(feature = "primitive-types", feature = "extra-muls")))]
     c.bench_function("U256::wrapping_mul", |b| {
         b.iter(|| black_box(nums[0]).wrapping_mul(black_box(nums[1])))
     });
+
+    #[cfg(feature = "extra-muls")]
+    {
+        fn get_name(
+            x1: U256,
+            y1: U256,
+            will_overflow1: bool,
+            x_sign: bool,
+            y_sign: bool,
+        ) -> String {
+            format!(
+                "{}{} * {}{} {}",
+                if x_sign { "-" } else { " " },
+                name_fn(x1),
+                if y_sign { "-" } else { " " },
+                name_fn(y1),
+                if will_overflow1 {
+                    "overflow"
+                } else {
+                    "no overflow"
+                }
+            )
+        }
+        for (x, y, will_overflow) in [
+            (nums[0], nums[1], true),
+            (nums[3], nums[5], false),
+            (nums[3], nums[4], true),
+            (nums[5], nums[3], false),
+            (nums[4], nums[3], true),
+            (nums[6], nums[7], false),
+        ] {
+            c.bench_with_input(
+                BenchmarkId::new(
+                    "U256::wrapping_mul",
+                    get_name(x, y, will_overflow, false, false),
+                ),
+                &(x, y),
+                |b, &(x, y)| b.iter(|| black_box(x).wrapping_mul(black_box(y))),
+            );
+
+            c.bench_with_input(
+                BenchmarkId::new(
+                    "U256::overflowing_mul",
+                    get_name(x, y, will_overflow, false, false),
+                ),
+                &(x, y),
+                |b, &(x, y)| b.iter(|| black_box(x).overflowing_mul(black_box(y))),
+            );
+
+            for (x_sign, y_sign) in [(false, false), (false, true), (true, false), (true, true)] {
+                let signed_x = if x_sign { 0 - x.as_i256() } else { x.as_i256() };
+                let signed_y = if y_sign { 0 - y.as_i256() } else { y.as_i256() };
+
+                c.bench_with_input(
+                    BenchmarkId::new(
+                        "I256::wrapping_mul",
+                        get_name(x, y, will_overflow, x_sign, y_sign),
+                    ),
+                    &(signed_x, signed_y),
+                    |b, &(signed_x, signed_y)| {
+                        b.iter(|| black_box(signed_x).wrapping_mul(black_box(signed_y)))
+                    },
+                );
+
+                c.bench_with_input(
+                    BenchmarkId::new(
+                        "I256::overflowing_mul",
+                        get_name(x, y, will_overflow, x_sign, y_sign),
+                    ),
+                    &(signed_x, signed_y),
+                    |b, &(signed_x, signed_y)| {
+                        b.iter(|| black_box(signed_x).overflowing_mul(black_box(signed_y)))
+                    },
+                );
+            }
+        }
+    }
 
     c.bench_function("U256::sub", |b| {
         b.iter(|| black_box(nums[0]) - black_box(nums[1]))
