@@ -4,7 +4,7 @@
 use crate::{intrinsics, I256, U256};
 use core::{
     mem::{self, MaybeUninit},
-    num::ParseIntError, ops::Neg,
+    num::ParseIntError,
 };
 
 impl I256 {
@@ -762,20 +762,20 @@ impl I256 {
                 return Some(self);
             }
         }
-        
+
         let mut acc;
         let mut base = self.as_u256();
 
         let exp_odd = exp & 1 == 1;
         if *self.high() == -1 {
-            base = U256::new(self.low().neg() as u128);
+            base = U256::new((-self.low()) as u128);
         } else if *self.high() != 0 {
             return None;
         }
 
         acc = base.checked_pow(exp & !1)?.as_i256();
         if acc.is_negative() {
-            return  None;
+            return None;
         }
 
         if exp_odd {
@@ -1819,11 +1819,11 @@ impl I256 {
                 return (self, false);
             }
         }
-        
+
         let mut acc;
         let mut overflown = false;
         // Scratch space for storing results of overflowing_mul.
-        let r;
+        
 
         let exp_odd = exp & 1 == 1;
         overflown |= *self.high() != 0 && *self.high() != -1;
@@ -1831,7 +1831,7 @@ impl I256 {
         // If acc's sign bit is not set, the last operation did not overflow;
         // if acc's sign bit is set, we will catch it later.
 
-        r = acc.as_u256().overflowing_pow(exp / 2);
+        let r = acc.as_u256().overflowing_pow(exp / 2);
         acc = r.0.as_i256();
         overflown |= r.1 || acc.is_negative();
 
@@ -1859,10 +1859,12 @@ impl I256 {
                   without modifying the original"]
     #[inline]
     pub fn pow(self, exp: u32) -> Self {
-        #[cfg(debug_assertions)] {
+        #[cfg(debug_assertions)]
+        {
             self.checked_pow(exp).unwrap()
         }
-        #[cfg(not(debug_assertions))] {
+        #[cfg(not(debug_assertions))]
+        {
             self.wrapping_pow(exp)
         }
     }
