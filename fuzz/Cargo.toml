@@ -8,7 +8,7 @@ edition = "2021"
 llvm-intrinsics = ["ethnum/llvm-intrinsics"]
 
 [dependencies]
-afl = "0.14"
+afl = "0.15"
 arbitrary = { version = "1", features = ["derive"] }
 ethnum = { path = ".." }
 num = "0.4"
