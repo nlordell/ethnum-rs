@@ -25,6 +25,7 @@ members = [
 [features]
 llvm-intrinsics = ["ethnum-intrinsics"]
 macros = [] # deprecated
+borsh = ["dep:borsh"]
 
 [dependencies]
 ethnum-intrinsics = { version = "=1.2.0", path = "intrinsics", optional = true }

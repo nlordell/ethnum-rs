@@ -28,7 +28,7 @@ impl borsh::BorshDeserialize for U256 {
 
 #[cfg(test)]
 mod borsh_tests {
-    use crate::I256;
+    use crate::{I256, U256};
 
     #[test]
     fn test_borsh_i256() {
@@ -36,5 +36,23 @@ mod borsh_tests {
         let buffer = borsh::to_vec(&i).expect("failed to serialize value");
         let deser_i: I256 = borsh::from_slice(&buffer).expect("failed to deserialize value");
         assert_eq!(deser_i, i);
+
+        let i = I256::MAX;
+        let buffer = borsh::to_vec(&i).expect("failed to serialize value");
+        let deser_i: I256 = borsh::from_slice(&buffer).expect("failed to deserialize value");
+        assert_eq!(deser_i, i);
+    }
+
+    #[test]
+    fn test_borsh_u256() {
+        let u = U256::MIN;
+        let buffer = borsh::to_vec(&u).expect("failed to serialize value");
+        let deser_u: U256 = borsh::from_slice(&buffer).expect("failed to deserialize value");
+        assert_eq!(deser_u, u);
+
+        let u = U256::MAX;
+        let buffer = borsh::to_vec(&u).expect("failed to serialize value");
+        let deser_u: U256 = borsh::from_slice(&buffer).expect("failed to deserialize value");
+        assert_eq!(deser_u, u);
     }
 }
