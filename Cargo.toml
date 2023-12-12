@@ -29,3 +29,4 @@ macros = [] # deprecated
 [dependencies]
 ethnum-intrinsics = { version = "=1.2.0", path = "intrinsics", optional = true }
 serde = { version = "1", default-features = false, optional = true }
+borsh = { version = "1.2.1", default-features = false, optional = true }

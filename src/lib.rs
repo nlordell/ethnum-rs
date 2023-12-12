@@ -24,6 +24,8 @@ mod macros {
     pub mod parse;
 }
 
+#[cfg(feature = "borsh")]
+pub mod borsh;
 mod error;
 mod fmt;
 mod int;
