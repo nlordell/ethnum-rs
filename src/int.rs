@@ -295,11 +295,8 @@ impl I256 {
                   without modifying the original"]
     #[track_caller]
     pub fn div_rem(self, rhs: Self) -> (Self, Self) {
-        #[cfg(debug_assertions)]
-        {
-            if self == Self::MIN && rhs == -1 {
-                panic!("attempt to divide with overflow")
-            }
+        if self == Self::MIN && rhs == -1 {
+            panic!("attempt to divide with overflow")
         }
         self.wrapping_div_rem(rhs)
     }
@@ -333,11 +330,8 @@ impl I256 {
                   without modifying the original"]
     #[track_caller]
     pub fn div_rem_euclid(self, rhs: Self) -> (Self, Self) {
-        #[cfg(debug_assertions)]
-        {
-            if self == Self::MIN && rhs == -1 {
-                panic!("attempt to divide with overflow")
-            }
+        if self == Self::MIN && rhs == -1 {
+            panic!("attempt to divide with overflow")
         }
         self.wrapping_div_rem_euclid(rhs)
     }
