@@ -5,6 +5,8 @@ mod cmp;
 mod convert;
 mod fmt;
 mod iter;
+#[cfg(feature = "num")]
+mod num;
 mod ops;
 mod parse;
 
