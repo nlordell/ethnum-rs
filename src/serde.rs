@@ -223,7 +223,7 @@ pub mod permissive {
 
     struct PermissiveVisitor<T>(PhantomData<T>);
 
-    impl<'de, T> Visitor<'de> for PermissiveVisitor<T>
+    impl<T> Visitor<'_> for PermissiveVisitor<T>
     where
         T: Permissive,
     {
@@ -417,7 +417,7 @@ pub mod bytes {
                     }
 
                     // SAFETY: all bytes have been initialized in for loop.
-                    let bytes = unsafe { mem::transmute(bytes) };
+                    let bytes = unsafe { mem::transmute::<[MaybeUninit<u8>; 32], [u8; 32]>(bytes) };
 
                     Ok(T::from_bytes(bytes))
                 }
@@ -624,7 +624,7 @@ pub mod compressed_bytes {
 /// serialization formats.
 struct FormatVisitor<F>(F);
 
-impl<'de, T, E, F> Visitor<'de> for FormatVisitor<F>
+impl<T, E, F> Visitor<'_> for FormatVisitor<F>
 where
     E: Display,
     F: FnOnce(&str) -> Result<T, E>,
@@ -1337,9 +1337,9 @@ mod tests {
         fn serialize_none(self) -> Result<Self::Ok, Self::Error> {
             unimplemented!()
         }
-        fn serialize_some<T: ?Sized>(self, _: &T) -> Result<Self::Ok, Self::Error>
+        fn serialize_some<T>(self, _: &T) -> Result<Self::Ok, Self::Error>
         where
-            T: Serialize,
+            T: Serialize + ?Sized,
         {
             unimplemented!()
         }
@@ -1357,17 +1357,17 @@ mod tests {
         ) -> Result<Self::Ok, Self::Error> {
             unimplemented!()
         }
-        fn serialize_newtype_struct<T: ?Sized>(
+        fn serialize_newtype_struct<T>(
             self,
             _: &'static str,
             _: &T,
         ) -> Result<Self::Ok, Self::Error>
         where
-            T: Serialize,
+            T: Serialize + ?Sized,
         {
             unimplemented!()
         }
-        fn serialize_newtype_variant<T: ?Sized>(
+        fn serialize_newtype_variant<T>(
             self,
             _: &'static str,
             _: u32,
@@ -1375,7 +1375,7 @@ mod tests {
             _: &T,
         ) -> Result<Self::Ok, Self::Error>
         where
-            T: Serialize,
+            T: Serialize + ?Sized,
         {
             unimplemented!()
         }
@@ -1486,9 +1486,9 @@ mod tests {
         fn serialize_none(self) -> Result<Self::Ok, Self::Error> {
             unimplemented!()
         }
-        fn serialize_some<T: ?Sized>(self, _: &T) -> Result<Self::Ok, Self::Error>
+        fn serialize_some<T>(self, _: &T) -> Result<Self::Ok, Self::Error>
         where
-            T: Serialize,
+            T: Serialize + ?Sized,
         {
             unimplemented!()
         }
@@ -1506,17 +1506,17 @@ mod tests {
         ) -> Result<Self::Ok, Self::Error> {
             unimplemented!()
         }
-        fn serialize_newtype_struct<T: ?Sized>(
+        fn serialize_newtype_struct<T>(
             self,
             _: &'static str,
             _: &T,
         ) -> Result<Self::Ok, Self::Error>
         where
-            T: Serialize,
+            T: Serialize + ?Sized,
         {
             unimplemented!()
         }
-        fn serialize_newtype_variant<T: ?Sized>(
+        fn serialize_newtype_variant<T>(
             self,
             _: &'static str,
             _: u32,
@@ -1524,7 +1524,7 @@ mod tests {
             _: &T,
         ) -> Result<Self::Ok, Self::Error>
         where
-            T: Serialize,
+            T: Serialize + ?Sized,
         {
             unimplemented!()
         }

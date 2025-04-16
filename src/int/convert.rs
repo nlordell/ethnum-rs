@@ -167,7 +167,7 @@ macro_rules! impl_try_into {
 
             #[inline]
             fn try_from(x: I256) -> Result<Self, Self::Error> {
-                if x <= <$t>::MAX.as_i256() {
+                if x >= <$t>::MIN.as_i256() && x <= <$t>::MAX.as_i256() {
                     Ok(*x.low() as _)
                 } else {
                     Err(tfie())
@@ -196,4 +196,35 @@ macro_rules! impl_into_float {
 
 impl_into_float! {
     f32 => as_f32, f64 => as_f64,
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::I256;
+    use core::str::FromStr as _;
+
+    #[test]
+    fn checked_conversion() {
+        assert_eq!(i32::try_from(I256::new(-10)).unwrap(), -10);
+        assert_eq!(i32::try_from(I256::new(10)).unwrap(), 10);
+        assert!(i32::try_from(I256::MIN).is_err());
+        assert!(i32::try_from(I256::MAX).is_err());
+    }
+
+    #[test]
+    fn github_issue_44() {
+        // A big number.
+        let lhs_i256 = I256::from(i128::MAX);
+
+        // Adding 19 zeros.
+        let scaled_lhs = lhs_i256 * I256::from_str("10000000000000000000").unwrap();
+
+        // One and 18 zeros.
+        let rhs_i256 = I256::from_str("-1000000000000000000").unwrap();
+
+        // So result is basically -i128::MAX and one zero.
+        let result = scaled_lhs.checked_div(rhs_i256).unwrap();
+
+        assert!(i128::try_from(result).is_err());
+    }
 }
