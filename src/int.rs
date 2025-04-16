@@ -10,7 +10,7 @@ mod parse;
 
 pub use self::convert::AsI256;
 use crate::uint::U256;
-use core::num::ParseIntError;
+use core::{mem::MaybeUninit, num::ParseIntError};
 
 /// A 256-bit signed integer type.
 #[derive(Clone, Copy, Default, Eq, Hash)]
@@ -271,6 +271,358 @@ impl I256 {
     pub fn as_f64(self) -> f64 {
         let sign = self.signum128() as f64;
         self.unsigned_abs().as_f64() * sign
+    }
+
+    /// Performs integer and division and returns the quotient and the remainder as a tuple. This is equivelent to `(self / rhs, self % rhs)`, but more effecient.
+    ///
+    /// # Panics
+    ///
+    /// This function will panic if `rhs` is 0, and will panic on overflow iff debug assertions are enabled.
+    ///
+    /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    /// ```
+    /// # use ethnum::I256;
+    /// assert_eq!(I256::new(22).div_rem(I256::new(5)), (I256::new(4), I256::new(2)));
+    /// assert_eq!(I256::new(-22).div_rem(I256::new(5)), (I256::new(-4), I256::new(-2)));
+    /// assert_eq!(I256::new(22).div_rem(I256::new(-5)), (I256::new(-4), I256::new(2)));
+    /// assert_eq!(I256::new(-22).div_rem(I256::new(-5)), (I256::new(4), I256::new(-2)));
+    /// ```
+    #[inline]
+    #[must_use = "this returns the result of the operation, \
+                  without modifying the original"]
+    #[track_caller]
+    pub fn div_rem(self, rhs: Self) -> (Self, Self) {
+        if self == Self::MIN && rhs == -1 {
+            panic!("attempt to divide with overflow")
+        }
+        self.wrapping_div_rem(rhs)
+    }
+
+    /// Performs euclidean division and returns the quotient and the remainder as a tuple.
+    ///
+    /// This computes the integers `q` and `r` such that self = q * rhs + r, with `q = self.div_euclid` and `r = self.rem_euclid(rhs)`.
+    ///
+    /// # Panics
+    ///
+    /// This function will panic if `rhs` is 0, and will panic on overflow iff debug assertions are enabled.
+    ///
+    /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    /// ```
+    /// # use ethnum::I256;
+    /// assert_eq!(I256::new(22).div_rem_euclid(I256::new(5)), (I256::new(4), I256::new(2)));
+    /// assert_eq!(I256::new(-22).div_rem_euclid(I256::new(5)), (I256::new(-5), I256::new(3)));
+    /// assert_eq!(I256::new(22).div_rem_euclid(I256::new(-5)), (I256::new(-4), I256::new(2)));
+    /// assert_eq!(I256::new(-22).div_rem_euclid(I256::new(-5)), (I256::new(5), I256::new(3)));
+    ///
+    /// # assert_eq!(I256::new(20).div_rem_euclid(I256::new(5)), (I256::new(4), I256::new(0)));
+    /// # assert_eq!(I256::new(-20).div_rem_euclid(I256::new(5)), (I256::new(-4), I256::new(0)));
+    /// # assert_eq!(I256::new(20).div_rem_euclid(I256::new(-5)), (I256::new(-4), I256::new(0)));
+    /// # assert_eq!(I256::new(-20).div_rem_euclid(I256::new(-5)), (I256::new(4), I256::new(0)));
+    /// ```
+    #[inline]
+    #[must_use = "this returns the result of the operation, \
+                  without modifying the original"]
+    #[track_caller]
+    pub fn div_rem_euclid(self, rhs: Self) -> (Self, Self) {
+        if self == Self::MIN && rhs == -1 {
+            panic!("attempt to divide with overflow")
+        }
+        self.wrapping_div_rem_euclid(rhs)
+    }
+
+    /// Checked division. Computes `self.div_rem(rhs)`,
+    /// returning `None` if `rhs == 0` or the division results in overflow.
+    ///
+    /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    /// ```
+    /// # use ethnum::I256;
+    /// assert_eq!((I256::MIN + 1).checked_div_rem(I256::new(-1)), Some((I256::MAX, I256::new(0))));
+    /// assert_eq!(I256::MIN.checked_div_rem(I256::new(-1)), None);
+    /// assert_eq!(I256::new(1).checked_div_rem(I256::new(0)), None);
+    /// ```
+    #[inline]
+    #[must_use = "this returns the result of the operation, \
+                  without modifying the original"]
+    #[track_caller]
+    pub fn checked_div_rem(self, rhs: Self) -> Option<(Self, Self)> {
+        if rhs == 0 || (self == Self::MIN && rhs == -1) {
+            None
+        } else {
+            if rhs.cmp(&I256::ZERO) == core::cmp::Ordering::Equal {
+                // The optimizer understands inequalities better
+                unsafe { core::hint::unreachable_unchecked() }
+            }
+
+            let mut res: MaybeUninit<Self> = MaybeUninit::uninit();
+            let mut rem: MaybeUninit<Self> = MaybeUninit::uninit();
+            crate::intrinsics::idivmod4(&mut res, &self, &rhs, Some(&mut rem));
+            unsafe { Some(((res.assume_init()), (rem.assume_init()))) }
+        }
+    }
+
+    /// Checked Euclidean division. Computes `self.div_rem_euclid(rhs)`,
+    /// returning `None` if `rhs == 0` or the division results in overflow.
+    ///
+    /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    /// ```
+    /// # use ethnum::I256;
+    /// assert_eq!((I256::MIN + 1).checked_div_rem_euclid(I256::new(-1)), Some((I256::MAX, I256::new(0))));
+    /// assert_eq!(I256::MIN.checked_div_rem_euclid(I256::new(-1)), None);
+    /// assert_eq!(I256::new(1).checked_div_rem_euclid(I256::new(0)), None);
+    /// ```
+    #[inline]
+    #[must_use = "this returns the result of the operation, \
+                  without modifying the original"]
+    #[track_caller]
+    pub fn checked_div_rem_euclid(self, rhs: Self) -> Option<(Self, Self)> {
+        if rhs == 0 || (self == Self::MIN && rhs == -1) {
+            None
+        } else {
+            if rhs.cmp(&I256::ZERO) == core::cmp::Ordering::Equal {
+                // The optimizer understands inequalities better
+                unsafe { core::hint::unreachable_unchecked() }
+            }
+
+            Some(self.wrapping_div_rem_euclid(rhs))
+        }
+    }
+
+    /// Saturating integer division. Computes `self.div_rem(rhs)`, saturating at the
+    /// numeric bounds instead of overflowing.
+    ///
+    /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    /// ```
+    /// # use ethnum::I256;
+    /// assert_eq!(I256::new(5).saturating_div_rem(I256::new(2)), (I256::new(2), I256::new(1)));
+    /// assert_eq!(I256::MAX.saturating_div_rem(I256::new(-1)), (I256::MIN + 1, I256::new(0)));
+    /// assert_eq!(I256::MIN.saturating_div_rem(I256::new(-1)), (I256::MAX, I256::new(0)));
+    /// ```
+    /// ```should_panic (expected = "attempt to divide by zero")
+    /// # use ethnum::I256;
+    /// let _ = I256::new(1).saturating_div_rem(I256::ZERO);
+    /// ```
+    #[inline]
+    #[must_use = "this returns the result of the operation, \
+                  without modifying the original"]
+    #[track_caller]
+    pub fn saturating_div_rem(self, rhs: Self) -> (Self, Self) {
+        match self.overflowing_div_rem(rhs) {
+            (q, r, false) => (q, r),
+            (_q, r, true) => (Self::MAX, r), // MIN / -1 is the only possible saturating overflow
+        }
+    }
+
+    /// Saturating integer division. Computes `self.div_rem_euclid(rhs)`, saturating at the
+    /// numeric bounds instead of overflowing.
+    ///
+    /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    /// ```
+    /// # use ethnum::I256;
+    /// assert_eq!(I256::new(5).saturating_div_rem_euclid(I256::new(2)), (I256::new(2), I256::new(1)));
+    /// assert_eq!(I256::MAX.saturating_div_rem_euclid(I256::new(-1)), (I256::MIN + 1, I256::new(0)));
+    /// assert_eq!(I256::MIN.saturating_div_rem_euclid(I256::new(-1)), (I256::MAX, I256::new(0)));
+    /// ```
+    /// ```should_panic (expected = "attempt to divide by zero")
+    /// # use ethnum::I256;
+    /// let _ = I256::new(1).saturating_div_rem_euclid(I256::ZERO);
+    /// ```
+    #[inline]
+    #[must_use = "this returns the result of the operation, \
+                  without modifying the original"]
+    #[track_caller]
+    pub fn saturating_div_rem_euclid(self, rhs: Self) -> (Self, Self) {
+        match self.overflowing_div_rem_euclid(rhs) {
+            (q, r, false) => (q, r),
+            (_q, r, true) => (Self::MAX, r),
+        }
+    }
+
+    /// Performs integer and division and returns the quotient and the remainder as a tuple. This is equivelent to `(self.wrapping_div(rhs), self.wrapping_rem(rhs))`, but more effecient.
+    ///
+    /// # Panics
+    ///
+    /// This function will panic if `rhs` is 0.
+    ///
+    /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    /// ```
+    /// # use ethnum::I256;
+    /// assert_eq!(I256::new(22).wrapping_div_rem(I256::new(5)), (I256::new(4), I256::new(2)));
+    /// assert_eq!(I256::new(-22).wrapping_div_rem(I256::new(5)), (I256::new(-4), I256::new(-2)));
+    /// assert_eq!(I256::new(22).wrapping_div_rem(I256::new(-5)), (I256::new(-4), I256::new(2)));
+    /// assert_eq!(I256::new(-22).wrapping_div_rem(I256::new(-5)), (I256::new(4), I256::new(-2)));
+    ///
+    /// assert_eq!(I256::MIN.wrapping_div_rem(I256::MINUS_ONE), (I256::MIN, I256::ZERO));
+    /// ```
+    #[inline]
+    #[must_use = "this returns the result of the operation, \
+                  without modifying the original"]
+    #[track_caller]
+    pub fn wrapping_div_rem(self, rhs: Self) -> (Self, Self) {
+        if rhs == 0 {
+            if rhs.cmp(&I256::ZERO) != core::cmp::Ordering::Equal {
+                // The optimizer understands inequalities better
+                unsafe { core::hint::unreachable_unchecked() }
+            }
+            panic!("attempt to divide by zero");
+        }
+        if rhs.cmp(&I256::ZERO) == core::cmp::Ordering::Equal {
+            // The optimizer understands inequalities better
+            unsafe { core::hint::unreachable_unchecked() }
+        }
+
+        let mut res: MaybeUninit<Self> = MaybeUninit::uninit();
+        let mut rem: MaybeUninit<Self> = MaybeUninit::uninit();
+        crate::intrinsics::idivmod4(&mut res, &self, &rhs, Some(&mut rem));
+        unsafe { ((res.assume_init()), (rem.assume_init())) }
+    }
+
+    /// Performs euclidean division and returns the quotient and the remainder as a tuple.
+    ///
+    /// This computes the integers `q` and `r` such that self = q * rhs + r, with `q = self.wrapping_div_euclid` and `r = self.wrapping_rem_euclid(rhs)`.
+    ///
+    /// # Panics
+    ///
+    /// This function will panic if `rhs` is 0.
+    ///
+    /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    /// ```
+    /// # use ethnum::I256;
+    /// assert_eq!(I256::new(22).wrapping_div_rem_euclid(I256::new(5)), (I256::new(4), I256::new(2)));
+    /// assert_eq!(I256::new(-22).wrapping_div_rem_euclid(I256::new(5)), (I256::new(-5), I256::new(3)));
+    /// assert_eq!(I256::new(22).wrapping_div_rem_euclid(I256::new(-5)), (I256::new(-4), I256::new(2)));
+    /// assert_eq!(I256::new(-22).wrapping_div_rem_euclid(I256::new(-5)), (I256::new(5), I256::new(3)));
+    ///
+    /// assert_eq!(I256::MIN.wrapping_div_rem(I256::MINUS_ONE), (I256::MIN, I256::ZERO));
+    /// # assert_eq!(I256::new(20).wrapping_div_rem_euclid(I256::new(5)), (I256::new(4), I256::new(0)));
+    /// # assert_eq!(I256::new(-20).wrapping_div_rem_euclid(I256::new(5)), (I256::new(-4), I256::new(0)));
+    /// # assert_eq!(I256::new(20).wrapping_div_rem_euclid(I256::new(-5)), (I256::new(-4), I256::new(0)));
+    /// # assert_eq!(I256::new(-20).wrapping_div_rem_euclid(I256::new(-5)), (I256::new(4), I256::new(0)));
+    /// ```
+    #[inline]
+    #[must_use = "this returns the result of the operation, \
+                  without modifying the original"]
+    #[track_caller]
+    pub fn wrapping_div_rem_euclid(self, rhs: Self) -> (Self, Self) {
+        let dividend_sign = self.is_negative();
+        let quotient_sign = dividend_sign ^ rhs.is_negative();
+        let abs_dividend = self.unsigned_abs();
+        let abs_divisor = rhs.unsigned_abs();
+
+        let (q, r) = abs_dividend.div_rem(abs_divisor);
+        let mut quotient = q.as_i256();
+        let mut remainder = r.as_i256();
+
+        let adjust_remainder = dividend_sign && remainder != 0;
+        if adjust_remainder {
+            remainder = abs_divisor.as_i256() - remainder;
+            // cannot overflow
+        }
+        if remainder.is_negative() || remainder.as_u256() >= abs_divisor {
+            debug_assert!(false);
+            unsafe { core::hint::unreachable_unchecked() }
+        }
+
+        if adjust_remainder {
+            if quotient_sign {
+                quotient = !quotient;
+                // quotient = -quotient - 1
+            } else {
+                quotient += 1;
+                // cannot overflow
+            }
+        } else if quotient_sign {
+            quotient = quotient.wrapping_neg();
+        }
+
+        (quotient, remainder)
+    }
+
+    /// Calculates the quotient and the remainder when `self` is divided by `rhs`.
+    ///
+    /// Returns a tuple of the quotient and the remainder along with a boolean indicating whether
+    /// an arithmetic overflow would occur. If an overflow would occur then
+    /// `self` is returned.
+    ///
+    /// # Panics
+    ///
+    /// This function will panic if `rhs` is 0.
+    ///
+    /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    /// ```
+    /// # use ethnum::I256;
+    /// assert_eq!(I256::new(5).overflowing_div_rem(I256::new(2)), (I256::new(2), I256::new(1), false));
+    /// assert_eq!(I256::MIN.overflowing_div_rem(I256::new(-1)), (I256::MIN, I256::new(0), true));
+    /// ```
+    #[inline]
+    #[must_use = "this returns the result of the operation, \
+                  without modifying the original"]
+    #[track_caller]
+    pub fn overflowing_div_rem(self, rhs: Self) -> (Self, Self, bool) {
+        if self == Self::MIN && rhs == -1 {
+            (self, Self::ZERO, true)
+        } else {
+            let (q, r) = self.wrapping_div_rem(rhs);
+            (q, r, false)
+        }
+    }
+
+    /// Calculates the quotient and remainder of Euclidean division `self.div_rem_euclid(rhs)`.
+    ///
+    /// Returns a tuple of the quotient and the remainder along with a boolean indicating whether
+    /// an arithmetic overflow would occur. If an overflow would occur then
+    /// `self` is returned.
+    ///
+    /// # Panics
+    ///
+    /// This function will panic if `rhs` is 0.
+    ///
+    /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    /// ```
+    /// # use ethnum::I256;
+    /// assert_eq!(I256::new(5).overflowing_div_rem_euclid(I256::new(2)), (I256::new(2), I256::new(1), false));
+    /// assert_eq!(I256::MIN.overflowing_div_rem_euclid(I256::new(-1)), (I256::MIN, I256::new(0), true));
+    /// ```
+    #[inline]
+    #[must_use = "this returns the result of the operation, \
+                  without modifying the original"]
+    #[track_caller]
+    pub fn overflowing_div_rem_euclid(self, rhs: Self) -> (Self, Self, bool) {
+        if self == Self::MIN && rhs == -1 {
+            (self, Self::ZERO, true)
+        } else {
+            let (q, r) = self.wrapping_div_rem_euclid(rhs);
+            (q, r, false)
+        }
     }
 }
 

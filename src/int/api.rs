@@ -1991,7 +1991,7 @@ impl I256 {
         I256::new(self.signum128())
     }
 
-    /// Returns a number representing sign of `self` as a 64-bit signed integer.
+    /// Returns a number representing sign of `self` as a 128 bit signed integer.
     ///
     ///  - `0` if the number is zero
     ///  - `1` if the number is positive
@@ -2042,9 +2042,10 @@ impl I256 {
     /// assert!(I256::new(-10).is_negative());
     /// assert!(!I256::new(10).is_negative());
     /// ```
-    #[inline]
+    #[inline(always)]
     pub const fn is_negative(self) -> bool {
-        self.signum128() < 0
+        let (a, _) = self.into_words();
+        a < 0
     }
 
     /// Return the memory representation of this integer as a byte array in
