@@ -710,7 +710,6 @@ impl U256 {
     /// assert_eq!(U256::new(100).saturating_add(U256::new(1)), U256::new(101));
     /// assert_eq!(U256::MAX.saturating_add(U256::new(127)), U256::MAX);
     /// ```
-
     #[must_use = "this returns the result of the operation, \
                   without modifying the original"]
     #[inline]
