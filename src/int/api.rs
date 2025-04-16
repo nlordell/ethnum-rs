@@ -779,7 +779,6 @@ impl I256 {
     /// assert_eq!(I256::MAX.saturating_add(I256::new(100)), I256::MAX);
     /// assert_eq!(I256::MIN.saturating_add(I256::new(-1)), I256::MIN);
     /// ```
-
     #[must_use = "this returns the result of the operation, \
                   without modifying the original"]
     #[inline]
@@ -885,7 +884,6 @@ impl I256 {
     /// assert_eq!(I256::MIN.saturating_neg(), I256::MAX);
     /// assert_eq!(I256::MAX.saturating_neg(), I256::MIN + 1);
     /// ```
-
     #[inline(always)]
     pub fn saturating_neg(self) -> Self {
         I256::ZERO.saturating_sub(self)
@@ -905,7 +903,6 @@ impl I256 {
     /// assert_eq!(I256::MIN.saturating_abs(), I256::MAX);
     /// assert_eq!((I256::MIN + 1).saturating_abs(), I256::MAX);
     /// ```
-
     #[inline]
     pub fn saturating_abs(self) -> Self {
         if self.is_negative() {

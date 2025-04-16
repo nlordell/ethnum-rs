@@ -9,9 +9,9 @@ macro_rules! cast {
         unsafe { &*($x as *const $crate::int::I256).cast::<$crate::uint::U256>() }
     };
     (uninit: $x:expr) => {
-        unsafe { &mut *($x).as_mut_ptr().cast::<MaybeUninit<$crate::uint::U256>>() }
+        unsafe { &mut *($x).as_mut_ptr().cast::<::core::mem::MaybeUninit<$crate::uint::U256>>() }
     };
     (optuninit: $x:expr) => {
-        unsafe { ::core::mem::transmute(::core::ptr::read(&$x as *const _)) }
+        ($x).as_mut().map(|x| cast!(uninit: *x))
     };
 }

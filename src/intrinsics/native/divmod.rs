@@ -380,7 +380,7 @@ pub fn idivmod4(
     res: &mut MaybeUninit<I256>,
     a: &I256,
     b: &I256,
-    rem: Option<&mut MaybeUninit<I256>>,
+    mut rem: Option<&mut MaybeUninit<I256>>,
 ) {
     const BITS_IN_TWORD_M1: u32 = 255;
     let s_a = a >> BITS_IN_TWORD_M1; // s_a = a < 0 ? -1 : 0
