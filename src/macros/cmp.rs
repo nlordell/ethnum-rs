@@ -4,10 +4,13 @@ macro_rules! impl_cmp {
     (
         impl Cmp for $int:ident ($prim:ident);
     ) => {
-        impl PartialOrd for $int {
+        impl ::core::hash::Hash for $int {
             #[inline]
-            fn partial_cmp(&self, other: &Self) -> Option<::core::cmp::Ordering> {
-                Some(self.cmp(other))
+            fn hash<H>(&self, hasher: &mut H)
+            where
+                H: ::core::hash::Hasher,
+            {
+                ::core::hash::Hash::hash(&self.0, hasher);
             }
         }
 
@@ -33,6 +36,13 @@ macro_rules! impl_cmp {
             #[inline]
             fn eq(&self, other: &$int) -> bool {
                 $int::new(*self) == *other
+            }
+        }
+
+        impl PartialOrd for $int {
+            #[inline]
+            fn partial_cmp(&self, other: &Self) -> Option<::core::cmp::Ordering> {
+                Some(self.cmp(other))
             }
         }
 
