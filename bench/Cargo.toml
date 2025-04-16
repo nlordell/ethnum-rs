@@ -10,7 +10,6 @@ harness = false
 
 [features]
 llvm-intrinsics = ["ethnum/llvm-intrinsics"]
-extra-muls = []
 
 [dependencies]
 ethnum = { path = ".." }
