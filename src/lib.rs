@@ -143,5 +143,10 @@ mod tests {
         let c = a + b;
         let d = c - b;
         assert_eq!(d, a);
+
+        assert_eq!(U256::ZERO.count_ones(), 0);
+        assert_eq!(U256::ZERO.count_zeros(), 256);
+        assert_eq!(U256::ZERO.trailing_ones(), 0);
+        assert_eq!(U256::ZERO.trailing_zeros(), 256);
     }
 }

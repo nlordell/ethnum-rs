@@ -133,16 +133,16 @@ EXPORT(void, ror3)(u256 *r, const u256 *a, uint32_t b) {
 }
 
 EXPORT(uint32_t, ctlz)(const u256 *a) {
-#if __has_builtin(__builtin_clz)
-  return __builtin_clz(*a);
+#if __has_builtin(__builtin_clzg)
+  return __builtin_clzg(*a, 256);
 #else
 // TODO
 #endif
 }
 
 EXPORT(uint32_t, cttz)(const u256 *a) {
-#if __has_builtin(__builtin_ctz)
-  return __builtin_ctz(*a);
+#if __has_builtin(__builtin_ctzg)
+  return __builtin_ctzg(*a, 256);
 #else
 // TODO
 #endif
