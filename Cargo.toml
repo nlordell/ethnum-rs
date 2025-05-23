@@ -20,6 +20,7 @@ members = ["bench", "fuzz", "intrinsics"]
 
 [features]
 intrinsics = ["dep:ethnum-intrinsics"]
+
 llvm-intrinsics = ["intrinsics"] # deprecated
 macros = [] # deprecated
 

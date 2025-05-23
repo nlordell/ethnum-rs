@@ -9,7 +9,7 @@ name = "num"
 harness = false
 
 [features]
-llvm-intrinsics = ["ethnum/llvm-intrinsics"]
+intrinsics = ["ethnum/intrinsics"]
 
 [dependencies]
 ethnum = { path = ".." }

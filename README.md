@@ -154,7 +154,7 @@ integer intrinsics:
 
 ```sh
 cargo bench -p ethnum-bench
-RUSTFLAGS="-Clinker-plugin-lto -Clinker=clang -Clink-arg=-fuse-ld=lld" cargo bench -p ethnum-bench --features llvm-intrinsics
+RUSTFLAGS="-Clinker-plugin-lto -Clinker=clang -Clink-arg=-fuse-ld=lld" cargo bench -p ethnum-bench --features intrinsics
 ```
 
 ## Fuzzing

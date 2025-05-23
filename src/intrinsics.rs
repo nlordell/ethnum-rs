@@ -11,14 +11,16 @@
 #[macro_use]
 mod cast;
 
-#[cfg(feature = "intrinsics")]
-mod intrinsics;
-#[cfg(not(feature = "intrinsics"))]
-mod native;
 pub mod signed;
 
+#[allow(clippy::module_inception)]
+#[cfg(feature = "intrinsics")]
+mod intrinsics;
 #[cfg(feature = "intrinsics")]
 pub use self::intrinsics::*;
+
+#[cfg(not(feature = "intrinsics"))]
+mod native;
 #[cfg(not(feature = "intrinsics"))]
 pub use self::native::*;
 
