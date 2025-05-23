@@ -80,9 +80,10 @@ EXPORT(bool, umulc)(u256 *r, const u256 *a, const u256 *b) {
 }
 
 EXPORT(bool, imulc)(i256 *r, const i256 *a, const i256 *b) {
-#if __has_builtin(__builtin_mul_overflow)
-  return __builtin_mul_overflow(*a, *b, r);
-#else
+  // TODO: clang doesn't support > 128 bits
+  #if __has_builtin(__builtin_mul_overflow) && !defined(__clang__)
+   return __builtin_mul_overflow(*a, *b, r);
+  #else
   i256 res = *a * *b;
   bool ov =
       ((*a != 0 && *b != 0 && (res / *a != *b || res / *b != *a)) ||
@@ -90,7 +91,7 @@ EXPORT(bool, imulc)(i256 *r, const i256 *a, const i256 *b) {
        (*a == 1 && *b == -1 && res < 0));
   *r = res;
   return ov;
-#endif
+  #endif
 }
 
 EXPORT(void, udiv2)(u256 *r, const u256 *a) { *r /= *a; }

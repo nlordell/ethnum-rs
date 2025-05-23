@@ -131,3 +131,17 @@ pub type i256 = I256;
 /// A 256-bit unsigned integer type.
 #[allow(non_camel_case_types)]
 pub type u256 = U256;
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_stuff() {
+        let a = U256::ONE;
+        let b = U256::new(2);
+        let c = a + b;
+        let d = c - b;
+        assert_eq!(d, a);
+    }
+}
