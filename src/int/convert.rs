@@ -225,6 +225,6 @@ mod tests {
         // So result is basically -i128::MAX and one zero.
         let result = scaled_lhs.checked_div(rhs_i256).unwrap();
 
-        assert!(i128::try_from(result).is_err());
+        i128::try_from(result).unwrap_err();
     }
 }

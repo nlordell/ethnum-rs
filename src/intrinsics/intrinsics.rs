@@ -1,15 +1,9 @@
-//! This module contains definitions for LLVM IR generated intrinsics.
+//! This module contains definitions for C intrinsics.
 
-// NOTE: LLVM IR generated intrinsics for `{i,u}div i256`, `{i,u}rem i256`, and
-// `imul i256` produce an error when compiling. Use the native implementations
-// even when generated intrinsics are enabled.
-#[path = "native/divmod.rs"]
-mod divmod;
-#[path = "native/mul.rs"]
-#[allow(dead_code)]
-mod mul;
+#[path = "native/divmod_impl.rs"]
+mod divmod_impl;
+pub use self::divmod_impl::{idivmod4, udivmod4};
 
-pub use self::{divmod::*, mul::imulc};
 use crate::{int::I256, uint::U256};
 use core::mem::{self, MaybeUninit};
 
@@ -38,6 +32,7 @@ macro_rules! def {
     )*};
 }
 
+// Keep in sync with `intrinsics/src/lib.rs`.
 def! {
     pub fn add2(r: &mut U256, a: &U256);
     pub fn add3(r: &mut MaybeUninit<U256>, a: &U256, b: &U256);
@@ -52,6 +47,17 @@ def! {
     pub fn mul2(r: &mut U256, a: &U256);
     pub fn mul3(r: &mut MaybeUninit<U256>, a: &U256, b: &U256);
     pub fn umulc(r: &mut MaybeUninit<U256>, a: &U256, b: &U256) -> bool;
+    pub fn imulc(r: &mut MaybeUninit<I256>, a: &I256, b: &I256) -> bool;
+
+    pub fn udiv2(r: &mut U256, a: &U256);
+    pub fn udiv3(r: &mut MaybeUninit<U256>, a: &U256, b: &U256);
+    pub fn urem2(r: &mut U256, a: &U256);
+    pub fn urem3(r: &mut MaybeUninit<U256>, a: &U256, b: &U256);
+
+    pub fn idiv2(r: &mut I256, a: &I256);
+    pub fn idiv3(r: &mut MaybeUninit<I256>, a: &I256, b: &I256);
+    pub fn irem2(r: &mut I256, a: &I256);
+    pub fn irem3(r: &mut MaybeUninit<I256>, a: &I256, b: &I256);
 
     pub fn shl2(r: &mut U256, a: u32);
     pub fn shl3(r: &mut MaybeUninit<U256>, a: &U256, b: u32);

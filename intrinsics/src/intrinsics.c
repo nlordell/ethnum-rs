@@ -22,9 +22,9 @@ EXPORT(bool, uaddc)(u256 *r, const u256 *a, const u256 *b) {
   return __builtin_add_overflow(*a, *b, r);
 #else
   u256 res = *a + *b;
-  bool carry = res < *a;
+  bool ov = res < *a;
   *r = res;
-  return carry;
+  return ov;
 #endif
 }
 
@@ -33,9 +33,9 @@ EXPORT(bool, iaddc)(i256 *r, const i256 *a, const i256 *b) {
   return __builtin_add_overflow(*a, *b, r);
 #else
   i256 res = *a + *b;
-  bool carry = ((*a > 0 && *b > 0 && res < 0) || (*a < 0 && *b < 0 && res > 0));
+  bool ov = ((*a > 0 && *b > 0 && res < 0) || (*a < 0 && *b < 0 && res > 0));
   *r = res;
-  return carry;
+  return ov;
 #endif
 }
 
@@ -47,9 +47,9 @@ EXPORT(bool, usubc)(u256 *r, const u256 *a, const u256 *b) {
 #if __has_builtin(__builtin_sub_overflow)
   return __builtin_sub_overflow(*a, *b, r);
 #else
-  bool carry = *a < *b;
+  bool ov = *a < *b;
   *r = *a - *b;
-  return carry;
+  return ov;
 #endif
 }
 
@@ -58,10 +58,9 @@ EXPORT(bool, isubc)(i256 *r, const i256 *a, const i256 *b) {
   return __builtin_sub_overflow(*a, *b, r);
 #else
   i256 res = *a - *b;
-  bool carry =
-      ((*a >= 0 && *b < 0 && res < 0) || (*a < 0 && *b >= 0 && res >= 0));
+  bool ov = ((*a >= 0 && *b < 0 && res < 0) || (*a < 0 && *b >= 0 && res >= 0));
   *r = res;
-  return carry;
+  return ov;
 #endif
 }
 
@@ -74,11 +73,35 @@ EXPORT(bool, umulc)(u256 *r, const u256 *a, const u256 *b) {
   return __builtin_mul_overflow(*a, *b, r);
 #else
   u256 res = *a * *b;
-  bool carry = (*a != 0 && *b != 0 && (res / *a != *b || res / *b != *a));
+  bool ov = (*a != 0 && *b != 0 && (res / *a != *b || res / *b != *a));
   *r = res;
-  return carry;
+  return ov;
 #endif
 }
+
+EXPORT(bool, imulc)(i256 *r, const i256 *a, const i256 *b) {
+#if __has_builtin(__builtin_mul_overflow)
+  return __builtin_mul_overflow(*a, *b, r);
+#else
+  i256 res = *a * *b;
+  bool ov =
+      ((*a != 0 && *b != 0 && (res / *a != *b || res / *b != *a)) ||
+       (*a == -1 && *b == -1 && res > 0) || (*a == -1 && *b == 1 && res < 0) ||
+       (*a == 1 && *b == -1 && res < 0));
+  *r = res;
+  return ov;
+#endif
+}
+
+EXPORT(void, udiv2)(u256 *r, const u256 *a) { *r /= *a; }
+EXPORT(void, udiv3)(u256 *r, const u256 *a, const u256 *b) { *r = *a / *b; }
+EXPORT(void, urem2)(u256 *r, const u256 *a) { *r %= *a; }
+EXPORT(void, urem3)(u256 *r, const u256 *a, const u256 *b) { *r = *a % *b; }
+
+EXPORT(void, idiv2)(i256 *r, const i256 *a) { *r /= *a; }
+EXPORT(void, idiv3)(i256 *r, const i256 *a, const i256 *b) { *r = *a / *b; }
+EXPORT(void, irem2)(i256 *r, const i256 *a) { *r %= *a; }
+EXPORT(void, irem3)(i256 *r, const i256 *a, const i256 *b) { *r = *a % *b; }
 
 EXPORT(void, shl2)(u256 *r, uint32_t a) { *r <<= (a & SHIFT_MASK); }
 
