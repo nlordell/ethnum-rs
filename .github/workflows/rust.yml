@@ -10,6 +10,51 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
+  test:
+    name: test ${{ matrix.os }} ${{ matrix.rust }} ${{ matrix.flags }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        os: ["ubuntu-latest", "windows-latest"]
+        rust: [
+            "stable",
+            "nightly",
+            # "1.81", # MSRV
+          ]
+        flags: [
+            # Default features
+            "",
+            "--features intrinsics",
+          ]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ matrix.rust }}
+      - uses: Swatinem/rust-cache@v2
+        with:
+          cache-on-failure: true
+      - name: test
+        run: cargo test --workspace ${{ matrix.flags }}
+
+  miri:
+    name: miri ${{ matrix.flags }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        flags: ["--no-default-features", ""]
+    env:
+      MIRIFLAGS: -Zmiri-strict-provenance
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@miri
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo miri test ${{ matrix.flags }}
+
   feature-checks:
     name: features ${{ matrix.rust }} ${{ matrix.flags }}
     runs-on: ubuntu-latest
