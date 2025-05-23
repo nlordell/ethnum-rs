@@ -4,5 +4,8 @@ fn main() {
 
     let mut build = cc::Build::new();
     build.file("src/intrinsics.c");
+    build
+        .flag_if_supported("-std=c23")
+        .flag_if_supported("-fexperimental-max-bitint-width=256");
     build.compile("intrinsics");
 }
