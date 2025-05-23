@@ -158,13 +158,13 @@ fn arithmetic(c: &mut Criterion) {
     }
 
     for x in [nums[0], nums[2], nums[4], nums[6]] {
-        c.bench_with_input(BenchmarkId::new("U256::clz", name(x)), &x, |b, &x| {
+        c.bench_with_input(BenchmarkId::new("U256::ctlz", name(x)), &x, |b, &x| {
             b.iter(|| black_box(x).leading_zeros())
         });
 
         #[cfg(not(any(feature = "primitive-types", feature = "ruint")))]
         c.bench_with_input(
-            BenchmarkId::new("U256::ctz", name(x)),
+            BenchmarkId::new("U256::cttz", name(x)),
             &x.swap_bytes(),
             |b, &x| b.iter(|| black_box(x).trailing_zeros()),
         );

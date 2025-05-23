@@ -121,7 +121,7 @@ impl U256 {
     /// ```
     #[inline(always)]
     pub fn leading_zeros(self) -> u32 {
-        intrinsics::signed::uclz(&self)
+        intrinsics::signed::uctlz(&self)
     }
 
     /// Returns the number of trailing zeros in the binary representation of
@@ -138,7 +138,7 @@ impl U256 {
     /// ```
     #[inline(always)]
     pub fn trailing_zeros(self) -> u32 {
-        intrinsics::signed::uctz(&self)
+        intrinsics::signed::ucttz(&self)
     }
 
     /// Returns the number of leading ones in the binary representation of
