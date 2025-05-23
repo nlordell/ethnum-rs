@@ -8,10 +8,8 @@ use core::mem::MaybeUninit;
 /// Opaque type used as parameter to intriniscs.
 ///
 /// Guaranteed to have a memory layout compatible with `ethnum::{I256, U256}`.
-#[repr(C)]
-pub struct I256 {
-    _i: [u64; 4],
-}
+#[repr(C, align(8))]
+pub struct I256([u8; 32]);
 
 macro_rules! def {
     ($(
@@ -20,6 +18,7 @@ macro_rules! def {
             $($p:ident : $t:ty),*
         ) $(-> $ret:ty)?;
     )*) => {
+        #[link(name = "intrinsics", kind = "static")]
         extern "C" {$(
             link! {
                 concat!("__ethnum_", stringify!($name));

@@ -63,7 +63,7 @@ The 256-bit integers uses intrinsics based on two implementations:
 
 The integer intrinsics are implemented using standard Rust. The more complicated
 operations such as multiplication and division are ported from C compiler
-intrinsics for implementing equivalent 128-bit operations on 64-bit systems (or
+intrinsics for implementing equivalent 256-bit operations on 64-bit systems (or
 64-bit operations on 32-bit systems). In general, these are ported from the
 Clang `compiler-rt` support routines.
 
@@ -71,52 +71,63 @@ This is the default implementation used by the crate, and in general is quite
 well optimized. When using native the implementation, there are no additional
 dependencies for this crate.
 
-### LLVM Generated Implementation
+### C-Generated Implementation
 
-Alternatively, `ethnum` can use LLVM-generated intrinsics for base 256-bit
-integer operations. This takes advantage of the fact that LLVM IR supports
-arbitrarily sized integer operations (such as `@llvm.uadd.with.overflow.i256`
-for overflowing unsigned addition). This will produce more optimized assembly
-for things like addition and multiplication.
+Alternatively, `ethnum` can use C-generated intrinsics for base 256-bit
+integer operations. This takes advantage of C23's `_BitInt(256)` feature
+for arbitrary-precision integer operations, which can produce more optimized
+assembly for operations like addition and multiplication when compiled with
+modern C compilers.
 
-However, there are a couple downsides to using LLVM-generated intrinsics. First
-of all, Clang is required in order to compile the LLVM IR. Additionally, Rust
+However, there are a couple downsides to using C-generated intrinsics. First
+of all, a C23-compatible compiler (such as GCC 14+ or Clang 18+) is required
+in order to compile the C code with `_BitInt` support. Additionally, Rust
 usually optimizes when compiling and linking Rust code (and not externally
 linked code), this means that these intrinsics cannot be inlined adding an extra
 function call overhead in some cases which make it perform worse than the native
 Rust implementation despite having more optimized assembly. Luckily, Rust
 currently has support for linker plugin LTO to enable optimizations during the
-link step, enabling optimizations with Clang-compiled LLVM IR.
+link step, enabling optimizations with C-compiled code.
 
-In order to use LLVM-generated intrinsics, enable the `llvm-intrinsics` feature:
-
+In order to use C-generated intrinsics, enable the `intrinsics` feature:
 ```toml
-ethnum = { version = "1", features = ["llvm-intrinsics"] }
+ethnum = { version = "1", features = ["intrinsics"] }
 ```
 
-And, genererally it is a good idea to compile with `linker-plugin-lto` enabled
-in order to actually take advantage of the the optimized assembly:
-
+And, generally it is a good idea to compile with `linker-plugin-lto` enabled
+in order to actually take advantage of the optimized assembly:
 ```sh
 RUSTFLAGS="-Clinker-plugin-lto -Clinker=clang -Clink-arg=-fuse-ld=lld" cargo build
 ```
 
-Note that **the `clang` version must match the `rustc` LLVM version**. If not,
+Note that **the C compiler version must support C23 `_BitInt` features**. If not,
 it is possible to encounter errors when running the `ethnum-intrinsics` build
-script. You can verify the LLVM version used by `rustc` with:
+script. You can verify C23 support with your compiler:
+
+For Clang:
+```sh
+clang --version  # Should be 18.0 or later
+```
+
+For GCC:
+```sh
+gcc --version  # Should be 14.0 or later
+```
+
+In particular, this affects macOS which ships its own `clang` binary that may
+not support C23 features. The `ethnum-intrinsics` build script accepts a `CC`
+environment variable to specify a specific C compiler executable path to use.
+Using a modern compiler version:
 
 ```sh
-rustc --version --verbose | grep LLVM
+brew install llvm
+CC=/opt/homebrew/opt/llvm/bin/clang cargo build
 ```
 
-In particular, this affects macOS which ships its own `clang` binary. The
-`ethnum-intrinsics` build script accepts a `CLANG` environment variable to
-specity a specific `clang` executable path to use. Using the major LLVM version
-from the command above:
-
-```
-brew install llvm@${LLVM_VERSION}
-CLANG=/opt/homebrew/opt/llvm@${LLVM_VERSION}/bin/clang cargo build
+Or with GCC:
+```sh
+brew install gcc
+CC=/opt/homebrew/bin/gcc-14 cargo build
 ```
 
 ### API Stability

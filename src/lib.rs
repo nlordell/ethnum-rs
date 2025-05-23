@@ -5,7 +5,7 @@
 //! primitive integer types.
 
 #![deny(missing_docs)]
-#![no_std]
+#![cfg_attr(not(test), no_std)]
 
 #[cfg(test)]
 extern crate alloc;

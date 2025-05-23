@@ -11,7 +11,6 @@ repository = "https://github.com/nlordell/ethnum-rs"
 license = "MIT OR Apache-2.0"
 keywords = ["integer", "u256", "ethereum"]
 categories = ["cryptography::cryptocurrencies", "mathematics", "no-std"]
-build = "build/main.rs"
 links = "ethnum"
 
 [build-dependencies]

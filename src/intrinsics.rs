@@ -11,15 +11,15 @@
 #[macro_use]
 mod cast;
 
-#[cfg(feature = "llvm-intrinsics")]
-mod llvm;
-#[cfg(not(feature = "llvm-intrinsics"))]
+#[cfg(feature = "intrinsics")]
+mod intrinsics;
+#[cfg(not(feature = "intrinsics"))]
 mod native;
 pub mod signed;
 
-#[cfg(feature = "llvm-intrinsics")]
-pub use self::llvm::*;
-#[cfg(not(feature = "llvm-intrinsics"))]
+#[cfg(feature = "intrinsics")]
+pub use self::intrinsics::*;
+#[cfg(not(feature = "intrinsics"))]
 pub use self::native::*;
 
 #[cfg(test)]
