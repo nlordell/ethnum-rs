@@ -64,8 +64,8 @@ def! {
     pub fn rol3(r: &mut MaybeUninit<U256>, a: &U256, b: u32);
     pub fn ror3(r: &mut MaybeUninit<U256>, a: &U256, b: u32);
 
-    pub fn ctlz(a: &U256) -> u32;
-    pub fn cttz(a: &U256) -> u32;
+    pub fn clz(a: &U256) -> u32;
+    pub fn ctz(a: &U256) -> u32;
 }
 
 #[cfg(test)]

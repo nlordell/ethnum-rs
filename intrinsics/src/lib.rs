@@ -63,6 +63,6 @@ def! {
     pub fn rol3(r: &mut MaybeUninit<I256>, a: &I256, b: u32);
     pub fn ror3(r: &mut MaybeUninit<I256>, a: &I256, b: u32);
 
-    pub fn ctlz(a: &I256) -> u32;
-    pub fn cttz(a: &I256) -> u32;
+    pub fn clz(a: &I256) -> u32;
+    pub fn ctz(a: &I256) -> u32;
 }

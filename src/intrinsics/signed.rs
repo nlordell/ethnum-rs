@@ -4,7 +4,7 @@
 //! This module can be helpful when using intrinsics directly.
 
 pub use super::{
-    add2 as uadd2, add3 as uadd3, ctlz as uctlz, cttz as ucttz, iaddc, idiv2, idiv3, imulc, irem2,
+    add2 as uadd2, add3 as uadd3, clz as uclz, ctz as uctz, iaddc, idiv2, idiv3, imulc, irem2,
     irem3, isubc, mul2 as umul2, mul3 as umul3, rol3 as urol3, ror3 as uror3, sar2 as isar2,
     sar3 as isar3, shl2 as ushl2, shl3 as ushl3, shr2 as ushr2, shr3 as ushr3, sub2 as usub2,
     sub3 as usub3, uaddc, udiv2, udiv3, umulc, urem2, urem3, usubc,
@@ -63,13 +63,13 @@ pub fn iror3(r: &mut MaybeUninit<I256>, a: &I256, b: u32) {
 }
 
 #[inline]
-pub fn ictlz(a: &I256) -> u32 {
-    super::ctlz(cast!(ref: a))
+pub fn iclz(a: &I256) -> u32 {
+    super::clz(cast!(ref: a))
 }
 
 #[inline]
-pub fn icttz(a: &I256) -> u32 {
-    super::cttz(cast!(ref: a))
+pub fn ictz(a: &I256) -> u32 {
+    super::ctz(cast!(ref: a))
 }
 
 #[cfg(test)]
