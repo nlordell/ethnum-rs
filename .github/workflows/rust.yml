@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Install Clang
       run: |
         LLVM_VERSION=$(rustc --version --verbose | sed -n 's/^LLVM version: \([0-9]*\).*$/\1/p')
