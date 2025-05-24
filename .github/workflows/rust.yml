@@ -2,42 +2,118 @@ name: Rust
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
 env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  check:
-    runs-on: ubuntu-latest
-
+  test:
+    name: test ${{ matrix.os }} ${{ matrix.rust }} ${{ matrix.flags }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        os: ["ubuntu-latest", "windows-latest"]
+        rust: [
+            "stable",
+            "nightly",
+            # "1.81", # MSRV
+          ]
+        flags: [
+            # Default features
+            "",
+            "--features intrinsics",
+          ]
     steps:
-    - uses: actions/checkout@v3
-    - name: Install Clang
-      run: |
-        LLVM_VERSION=$(rustc --version --verbose | sed -n 's/^LLVM version: \([0-9]*\).*$/\1/p')
-        curl -s https://apt.llvm.org/llvm.sh | sudo bash -s -- ${LLVM_VERSION}
-        echo "CLANG=clang-${LLVM_VERSION}" >> ${GITHUB_ENV}
-    - name: Lint
-      run: |
-        cargo fmt --all -- --check
-        cargo clippy --workspace --all-targets -- -D warnings
-    - name: Test Native Intrinsics
-      run: |
-        cargo test
-        cargo test --release
-    - name: Test LLVM Intrinsics
-      run: |
-        cargo clippy --features llvm-intrinsics --all-targets -- -D warnings
-        cargo test --features llvm-intrinsics
-        cargo test --features llvm-intrinsics --release
-    - name: Test Additional Features
-      run: |
-        cargo clippy --features serde --all-targets -- -D warnings
-        cargo test --features serde
-        cargo test --features serde --release
-    - name: Build Deprecated Features
-      run: |
-        cargo clippy --features macros --all-targets -- -D warnings
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ matrix.rust }}
+      - uses: Swatinem/rust-cache@v2
+        with:
+          cache-on-failure: true
+      - name: test
+        run: cargo test --workspace ${{ matrix.flags }}
+
+  miri:
+    name: miri ${{ matrix.flags }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        flags: ["--no-default-features", ""]
+    env:
+      MIRIFLAGS: -Zmiri-strict-provenance
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@miri
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo miri test ${{ matrix.flags }}
+
+  feature-checks:
+    name: features ${{ matrix.rust }} ${{ matrix.flags }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        rust: ["stable", "nightly"]
+        flags: ["", "--all-targets"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ matrix.rust }}
+      - uses: taiki-e/install-action@cargo-hack
+      - uses: Swatinem/rust-cache@v2
+        with:
+          cache-on-failure: true
+      - name: cargo hack
+        run: |
+          args=(${{ matrix.flags }})
+          [ ${{ matrix.rust }} == "stable" ] && args+=(--skip nightly)
+          ./scripts/check_features.sh "${args[@]}"
+
+  clippy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@nightly
+        with:
+          components: clippy
+      - uses: Swatinem/rust-cache@v2
+        with:
+          cache-on-failure: true
+      - run: cargo clippy --workspace --all-targets --all-features
+        env:
+          RUSTFLAGS: -Dwarnings
+
+  docs:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@nightly
+      - uses: Swatinem/rust-cache@v2
+        with:
+          cache-on-failure: true
+      - name: Build documentation
+        run: cargo doc --workspace --all-features --no-deps --document-private-items
+        env:
+          RUSTDOCFLAGS: --cfg docsrs -D warnings -Zunstable-options --show-type-layout --generate-link-to-definition
+
+  fmt:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@nightly
+        with:
+          components: rustfmt
+      - run: cargo fmt --all --check

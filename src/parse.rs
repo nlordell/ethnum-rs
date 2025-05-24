@@ -37,8 +37,7 @@ pub(crate) fn from_str_radix<T: FromStrRadixHelper>(
 
     assert!(
         (2..=36).contains(&radix),
-        "from_str_radix_int: must lie in the range `[2, 36]` - found {}",
-        radix
+        "from_str_radix_int: must lie in the range `[2, 36]` - found {radix}",
     );
 
     if src.is_empty() {

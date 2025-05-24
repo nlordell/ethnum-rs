@@ -1,10 +1,14 @@
 use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion};
-#[cfg(not(any(feature = "primitive-types", feature = "ruint")))]
-use ethnum::{I256, U256};
-#[cfg(feature = "primitive-types")]
-use primitive_types::U256;
-#[cfg(feature = "ruint")]
-use ruint::aliases::U256;
+
+cfg_if::cfg_if! {
+    if #[cfg(feature = "primitive-types")] {
+        use primitive_types::U256;
+    } else if #[cfg(feature = "ruint")] {
+        use ruint::aliases::U256;
+    } else {
+        use ethnum::{I256, U256};
+    }
+}
 
 #[cfg(not(feature = "ruint"))]
 type Shift = u32;

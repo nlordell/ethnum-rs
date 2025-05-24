@@ -5,7 +5,7 @@
 //! primitive integer types.
 
 #![deny(missing_docs)]
-#![no_std]
+#![cfg_attr(not(test), no_std)]
 
 #[cfg(test)]
 extern crate alloc;
@@ -131,3 +131,22 @@ pub type i256 = I256;
 /// A 256-bit unsigned integer type.
 #[allow(non_camel_case_types)]
 pub type u256 = U256;
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_stuff() {
+        let a = U256::ONE;
+        let b = U256::new(2);
+        let c = a + b;
+        let d = c - b;
+        assert_eq!(d, a);
+
+        assert_eq!(U256::ZERO.count_ones(), 0);
+        assert_eq!(U256::ZERO.count_zeros(), 256);
+        assert_eq!(U256::ZERO.trailing_ones(), 0);
+        assert_eq!(U256::ZERO.trailing_zeros(), 256);
+    }
+}

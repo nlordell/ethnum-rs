@@ -5,7 +5,7 @@ publish = false
 edition = "2021"
 
 [features]
-llvm-intrinsics = ["ethnum/llvm-intrinsics"]
+intrinsics = ["ethnum/intrinsics"]
 
 [dependencies]
 afl = "0.15"

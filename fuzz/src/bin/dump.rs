@@ -12,7 +12,7 @@ fn main() {
 
     let bytes = fs::read(&args[1]).unwrap();
     let target = Target::load(&bytes).unwrap();
-    println!("{:#?}", target);
+    println!("{target:#?}");
 
     ethnum_fuzz::fuzz(&bytes).unwrap();
 }

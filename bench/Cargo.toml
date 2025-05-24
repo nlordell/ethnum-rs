@@ -9,10 +9,11 @@ name = "num"
 harness = false
 
 [features]
-llvm-intrinsics = ["ethnum/llvm-intrinsics"]
+intrinsics = ["ethnum/intrinsics"]
 
 [dependencies]
 ethnum = { path = ".." }
 criterion = "0.5"
 primitive-types = { version = "0.13", optional = true }
 ruint = { version = "1", optional = true }
+cfg-if = "1"
