@@ -1,5 +1,19 @@
 //! Module with comparison implementations for `I256`.
 //!
+//! `PartialEq` is derived and not implemented, which is important for ensuring
+//! that `match` can be used with `I256`.
+//!
+//! ```
+//! # use ethnum::I256;
+//! # let value = I256::new(42);
+//!
+//! match (value) {
+//!     I256::ZERO => println!("I am zero"),
+//!     I256::ONE => println!("I am one"),
+//!     _ => println!("I am something else"),
+//! }
+//! ```
+//!
 //! `PartialEq` and `PartialOrd` implementations for `i128` are also provided
 //! to allow notation such as:
 //!

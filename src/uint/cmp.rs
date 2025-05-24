@@ -1,5 +1,19 @@
 //! Module with comparison implementations for `U256`.
 //!
+//! `PartialEq` is derived and not implemented, which is important for ensuring
+//! that `match` can be used with `U256`.
+//!
+//! ```
+//! # use ethnum::U256;
+//! # let value = U256::new(42);
+//!
+//! match (value) {
+//!     U256::ZERO => println!("I am zero"),
+//!     U256::ONE => println!("I am one"),
+//!     _ => println!("I am something else"),
+//! }
+//! ```
+//!
 //! `PartialEq` and `PartialOrd` implementations for `u128` are also provided
 //! to allow notation such as:
 //!
