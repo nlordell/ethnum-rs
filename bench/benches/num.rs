@@ -1,10 +1,11 @@
-use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion};
+use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion};
 #[cfg(not(any(feature = "primitive-types", feature = "ruint")))]
 use ethnum::{I256, U256};
 #[cfg(feature = "primitive-types")]
 use primitive_types::U256;
 #[cfg(feature = "ruint")]
 use ruint::aliases::U256;
+use std::hint::black_box;
 
 #[cfg(not(feature = "ruint"))]
 type Shift = u32;
