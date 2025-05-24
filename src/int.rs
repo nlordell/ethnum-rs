@@ -13,7 +13,7 @@ use crate::uint::U256;
 use core::{mem::MaybeUninit, num::ParseIntError};
 
 /// A 256-bit signed integer type.
-#[derive(Clone, Copy, Default, Eq)]
+#[derive(Clone, Copy, Default, Eq, Hash, PartialEq)]
 #[repr(transparent)]
 pub struct I256(pub [i128; 2]);
 
