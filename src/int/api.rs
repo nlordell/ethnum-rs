@@ -532,11 +532,20 @@ impl I256 {
                   without modifying the original"]
     #[inline]
     pub fn checked_mul(self, rhs: Self) -> Option<Self> {
-        let (a, b) = self.overflowing_mul(rhs);
-        if b {
-            None
+        let abs_a = self.unsigned_abs();
+        let abs_b = rhs.unsigned_abs();
+        let res = abs_a.checked_mul(abs_b)?.as_i256();
+        let sign = self.is_negative() ^ rhs.is_negative();
+        if res.is_negative() {
+            if sign && res == Self::MIN {
+                Some(res)
+            } else {
+                None
+            }
+        } else if sign {
+            Some(-res)
         } else {
-            Some(a)
+            Some(res)
         }
     }
 
@@ -745,25 +754,35 @@ impl I256 {
     #[must_use = "this returns the result of the operation, \
                   without modifying the original"]
     #[inline]
-    pub fn checked_pow(self, mut exp: u32) -> Option<Self> {
-        if exp == 0 {
-            return Some(Self::ONE);
-        }
-        let mut base = self;
-        let mut acc = Self::ONE;
-
-        while exp > 1 {
-            if (exp & 1) == 1 {
-                acc = acc.checked_mul(base)?;
+    pub fn checked_pow(self, exp: u32) -> Option<Self> {
+        if exp <= 1 {
+            if exp == 0 {
+                return Some(Self::ONE);
+            } else {
+                return Some(self);
             }
-            exp /= 2;
-            base = base.checked_mul(base)?;
         }
-        // since exp!=0, finally the exp must be 1.
-        // Deal with the final bit of the exponent separately, since
-        // squaring the base afterwards is not necessary and may cause a
-        // needless overflow.
-        acc.checked_mul(base)
+
+        let mut acc;
+        let mut base = self.as_u256();
+
+        let exp_odd = exp & 1 == 1;
+        if *self.high() == -1 {
+            base = U256::new((-self.low()) as u128);
+        } else if *self.high() != 0 {
+            return None;
+        }
+
+        acc = base.checked_pow(exp & !1)?.as_i256();
+        if acc.is_negative() {
+            return None;
+        }
+
+        if exp_odd {
+            acc = acc.checked_mul(self)?;
+        }
+
+        Some(acc)
     }
 
     /// Saturating integer addition. Computes `self + rhs`, saturating at the
@@ -1789,35 +1808,37 @@ impl I256 {
     #[must_use = "this returns the result of the operation, \
                   without modifying the original"]
     #[inline]
-    pub fn overflowing_pow(self, mut exp: u32) -> (Self, bool) {
-        if exp == 0 {
-            return (Self::ONE, false);
+    pub fn overflowing_pow(self, exp: u32) -> (Self, bool) {
+        if exp <= 1 {
+            if exp == 0 {
+                return (Self::ONE, false);
+            } else {
+                return (self, false);
+            }
         }
-        let mut base = self;
-        let mut acc = Self::ONE;
+
+        let mut acc;
         let mut overflown = false;
         // Scratch space for storing results of overflowing_mul.
-        let mut r;
+        
 
-        while exp > 1 {
-            if (exp & 1) == 1 {
-                r = acc.overflowing_mul(base);
-                acc = r.0;
-                overflown |= r.1;
-            }
-            exp /= 2;
-            r = base.overflowing_mul(base);
-            base = r.0;
+        let exp_odd = exp & 1 == 1;
+        overflown |= *self.high() != 0 && *self.high() != -1;
+        acc = self.wrapping_mul(self);
+        // If acc's sign bit is not set, the last operation did not overflow;
+        // if acc's sign bit is set, we will catch it later.
+
+        let r = acc.as_u256().overflowing_pow(exp / 2);
+        acc = r.0.as_i256();
+        overflown |= r.1 || acc.is_negative();
+
+        if exp_odd {
+            let r = acc.overflowing_mul(self);
+            acc = r.0;
             overflown |= r.1;
         }
 
-        // since exp!=0, finally the exp must be 1.
-        // Deal with the final bit of the exponent separately, since
-        // squaring the base afterwards is not necessary and may cause a
-        // needless overflow.
-        r = acc.overflowing_mul(base);
-        r.1 |= overflown;
-        r
+        (acc, overflown)
     }
 
     /// Raises self to the power of `exp`, using exponentiation by squaring.
@@ -1834,26 +1855,15 @@ impl I256 {
     #[must_use = "this returns the result of the operation, \
                   without modifying the original"]
     #[inline]
-    pub fn pow(self, mut exp: u32) -> Self {
-        if exp == 0 {
-            return Self::ONE;
+    pub fn pow(self, exp: u32) -> Self {
+        #[cfg(debug_assertions)]
+        {
+            self.checked_pow(exp).unwrap()
         }
-        let mut base = self;
-        let mut acc = Self::ONE;
-
-        while exp > 1 {
-            if (exp & 1) == 1 {
-                acc *= base;
-            }
-            exp /= 2;
-            base = base * base;
+        #[cfg(not(debug_assertions))]
+        {
+            self.wrapping_pow(exp)
         }
-
-        // since exp!=0, finally the exp must be 1.
-        // Deal with the final bit of the exponent separately, since
-        // squaring the base afterwards is not necessary and may cause a
-        // needless overflow.
-        acc * base
     }
 
     /// Calculates the quotient of Euclidean division of `self` by `rhs`.

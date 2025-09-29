@@ -681,11 +681,15 @@ impl U256 {
         let mut acc = U256::ONE;
 
         while exp > 1 {
+            if *base.high() != 0 {
+                return None;
+            }
             if (exp & 1) == 1 {
-                acc = acc.checked_mul(base)?;
+                debug_assert_eq!(*acc.high(), 0);
+                acc = Self::new(*acc.low()) * Self::new(*base.low());
             }
             exp /= 2;
-            base = base.checked_mul(base)?;
+            base = Self::new(*base.low()) * Self::new(*base.low());
         }
 
         // Deal with the final bit of the exponent separately, since
@@ -1465,18 +1469,16 @@ impl U256 {
         let mut acc = U256::ONE;
         let mut overflown = false;
         // Scratch space for storing results of overflowing_mul.
-        let mut r;
+        let r;
 
         while exp > 1 {
             if (exp & 1) == 1 {
-                r = acc.overflowing_mul(base);
-                acc = r.0;
-                overflown |= r.1;
+                debug_assert!(overflown || acc <= base || acc <= 1);
+                acc = acc.wrapping_mul(base);
             }
             exp /= 2;
-            r = base.overflowing_mul(base);
-            base = r.0;
-            overflown |= r.1;
+            overflown |= *base.high() != 0;
+            base = base.wrapping_mul(base);
         }
 
         // Deal with the final bit of the exponent separately, since
@@ -1504,26 +1506,15 @@ impl U256 {
     #[must_use = "this returns the result of the operation, \
                   without modifying the original"]
     #[inline]
-    pub fn pow(self, mut exp: u32) -> Self {
-        let mut base = self;
-        let mut acc = U256::ONE;
-
-        while exp > 1 {
-            if (exp & 1) == 1 {
-                acc *= base;
-            }
-            exp /= 2;
-            base = base * base;
+    pub fn pow(self, exp: u32) -> Self {
+        #[cfg(debug_assertions)]
+        {
+            self.checked_pow(exp).unwrap()
         }
-
-        // Deal with the final bit of the exponent separately, since
-        // squaring the base afterwards is not necessary and may cause a
-        // needless overflow.
-        if exp == 1 {
-            acc *= base;
+        #[cfg(not(debug_assertions))]
+        {
+            self.wrapping_pow(exp)
         }
-
-        acc
     }
 
     /// Performs Euclidean division.
