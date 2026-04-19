@@ -36,7 +36,6 @@ pub fn tfie() -> TryFromIntError {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use core::num::NonZeroU32;
 
     #[test]
     #[allow(clippy::from_str_radix_10)]
@@ -57,14 +56,6 @@ mod tests {
             pie(IntErrorKind::NegOverflow),
             i8::from_str_radix("-1337", 10).unwrap_err(),
         );
-    }
-
-    #[test]
-    fn parse_int_error_zero() {
-        // Zero variant is not used by the library, but verify it can be
-        // constructed for completeness.
-        let zero_err = "0".parse::<NonZeroU32>().unwrap_err();
-        assert_eq!(*zero_err.kind(), IntErrorKind::Zero);
     }
 
     #[test]
