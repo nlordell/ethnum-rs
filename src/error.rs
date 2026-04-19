@@ -4,27 +4,28 @@
 use core::num::{IntErrorKind, ParseIntError, TryFromIntError};
 
 /// Returns a `ParseIntError` with the specified `IntErrorKind`.
-pub fn pie(kind: IntErrorKind) -> ParseIntError {
+pub const fn pie(kind: IntErrorKind) -> ParseIntError {
     match kind {
         IntErrorKind::Empty => u8_parse_error(""),
         IntErrorKind::InvalidDigit => u8_parse_error("?"),
         IntErrorKind::PosOverflow => u8_parse_error("256"),
         IntErrorKind::NegOverflow => i8_parse_error("-129"),
-        IntErrorKind::Zero => zero_parse_error(),
-        _ => u8_parse_error("?"), // fallback for future variants
+        _ => unreachable!(),
     }
 }
 
-fn u8_parse_error(s: &str) -> ParseIntError {
-    s.parse::<u8>().unwrap_err()
+const fn u8_parse_error(s: &str) -> ParseIntError {
+    let Err(err) = u8::from_str_radix(s, 10) else {
+        panic!("not a parse error!");
+    };
+    err
 }
 
-fn i8_parse_error(s: &str) -> ParseIntError {
-    s.parse::<i8>().unwrap_err()
-}
-
-fn zero_parse_error() -> ParseIntError {
-    "0".parse::<core::num::NonZeroU8>().unwrap_err()
+const fn i8_parse_error(s: &str) -> ParseIntError {
+    let Err(err) = i8::from_str_radix(s, 10) else {
+        panic!("not a parse error!");
+    };
+    err
 }
 
 /// Returns a `TryFromIntError`.
@@ -56,10 +57,14 @@ mod tests {
             pie(IntErrorKind::NegOverflow),
             i8::from_str_radix("-1337", 10).unwrap_err(),
         );
-        assert_eq!(
-            pie(IntErrorKind::Zero),
-            "0".parse::<NonZeroU32>().unwrap_err(),
-        );
+    }
+
+    #[test]
+    fn parse_int_error_zero() {
+        // Zero variant is not used by the library, but verify it can be
+        // constructed for completeness.
+        let zero_err = "0".parse::<NonZeroU32>().unwrap_err();
+        assert_eq!(*zero_err.kind(), IntErrorKind::Zero);
     }
 
     #[test]
