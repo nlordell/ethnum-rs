@@ -12,8 +12,15 @@ pub const fn pie(kind: IntErrorKind) -> ParseIntError {
 }
 
 /// Returns a `TryFromIntError`.
+///
+/// `TryFromIntError` has no public constructor. We construct it from a
+/// zero-initialized buffer of the correct size, which works regardless of
+/// the type's internal layout across Rust versions.
 pub const fn tfie() -> TryFromIntError {
-    unsafe { mem::transmute(()) }
+    // SAFETY: `TryFromIntError` is a simple error type with no invariants
+    // beyond its size. A zero-initialized value is valid for all known
+    // layouts (zero-sized on Rust < 1.97, one byte on Rust >= 1.97).
+    unsafe { mem::MaybeUninit::<TryFromIntError>::zeroed().assume_init() }
 }
 
 #[cfg(test)]
