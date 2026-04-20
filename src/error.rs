@@ -1,25 +1,41 @@
-//! Module with hacks for creating error variants for standard library errors
-//! without public interfaces.
+//! Module with safe helpers for creating error variants for standard library
+//! errors without public constructors.
 
-use core::{
-    mem,
-    num::{IntErrorKind, ParseIntError, TryFromIntError},
-};
+use core::num::{IntErrorKind, ParseIntError, TryFromIntError};
 
-/// Returns a `ParseIntError` from an `IntErrorKind`.
+/// Returns a `ParseIntError` with the specified `IntErrorKind`.
 pub const fn pie(kind: IntErrorKind) -> ParseIntError {
-    unsafe { mem::transmute(kind) }
+    match kind {
+        IntErrorKind::Empty => u8_parse_error(""),
+        IntErrorKind::InvalidDigit => u8_parse_error("?"),
+        IntErrorKind::PosOverflow => u8_parse_error("256"),
+        IntErrorKind::NegOverflow => i8_parse_error("-129"),
+        _ => unreachable!(),
+    }
+}
+
+const fn u8_parse_error(s: &str) -> ParseIntError {
+    let Err(err) = u8::from_str_radix(s, 10) else {
+        panic!("not a parse error!");
+    };
+    err
+}
+
+const fn i8_parse_error(s: &str) -> ParseIntError {
+    let Err(err) = i8::from_str_radix(s, 10) else {
+        panic!("not a parse error!");
+    };
+    err
 }
 
 /// Returns a `TryFromIntError`.
-pub const fn tfie() -> TryFromIntError {
-    unsafe { mem::transmute(()) }
+pub fn tfie() -> TryFromIntError {
+    u8::try_from(-1i8).unwrap_err()
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use core::num::NonZeroU32;
 
     #[test]
     #[allow(clippy::from_str_radix_10)]
@@ -39,10 +55,6 @@ mod tests {
         assert_eq!(
             pie(IntErrorKind::NegOverflow),
             i8::from_str_radix("-1337", 10).unwrap_err(),
-        );
-        assert_eq!(
-            pie(IntErrorKind::Zero),
-            "0".parse::<NonZeroU32>().unwrap_err(),
         );
     }
 
